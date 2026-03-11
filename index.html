@@ -224,10 +224,6 @@
                         <span class="bg-blue-600 text-xs px-2 py-1 rounded-full" id="user-count">0</span>
                     </button>
                     
-                    <button onclick="showAuditLog()" class="w-full flex items-center p-2 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors group">
-                        <i class="bi bi-journal-text mr-2 group-hover:text-blue-400"></i>Log de Atividades
-                    </button>
-                    
                     <button onclick="exportFullBackup()" class="w-full flex items-center p-2 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors group">
                         <i class="bi bi-database-down mr-2 group-hover:text-blue-400"></i>Backup Completo
                     </button>
@@ -263,7 +259,7 @@
                     </div>
                     <input type="text" id="mainSearch" onkeyup="smartSearch()" 
                         class="w-full bg-gray-700/50 border border-gray-600 rounded-2xl pl-12 pr-32 py-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
-                        placeholder="Pesquise por modelo, placa, sintoma, componente...">
+                        placeholder="Digite para pesquisar em tempo real...">
                     
                     <!-- Search Filters -->
                     <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
@@ -278,27 +274,10 @@
                     </div>
                 </div>
 
-                <!-- Quick Filters -->
-                <div class="flex gap-2 flex-wrap">
-                    <button onclick="setDateFilter('today')" class="px-3 py-1.5 bg-gray-700/50 rounded-xl text-sm hover:bg-gray-700 transition-colors relative group">
-                        Hoje
-                        <span class="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse hidden group-hover:block"></span>
-                    </button>
-                    <button onclick="setDateFilter('week')" class="px-3 py-1.5 bg-gray-700/50 rounded-xl text-sm hover:bg-gray-700 transition-colors">
-                        Esta semana
-                    </button>
-                    <button onclick="setDateFilter('month')" class="px-3 py-1.5 bg-gray-700/50 rounded-xl text-sm hover:bg-gray-700 transition-colors">
-                        Este mês
-                    </button>
-                    <button onclick="setDateFilter('all')" class="px-3 py-1.5 bg-blue-600 rounded-xl text-sm hover:bg-blue-700 transition-colors">
-                        Todos
-                    </button>
+                <!-- Result count -->
+                <div class="text-sm text-gray-400" id="search-result-count">
+                    Total: <span id="total-count">0</span> registros
                 </div>
-            </div>
-
-            <!-- Active Filters Tags -->
-            <div id="active-filters" class="flex flex-wrap gap-2 mt-3">
-                <!-- Active filters will appear here -->
             </div>
         </div>
 
@@ -570,7 +549,7 @@
 
                 <div class="bg-gray-700/30 p-4 rounded-xl">
                     <h4 class="font-semibold mb-3">🔧 Top Componentes</h4>
-                    <div id="top-components-analytics" class="space-y-2">
+                    <div id="top-components-analytics" class="space-y-2 max-h-64 overflow-y-auto">
                         <!-- Dynamic content -->
                     </div>
                 </div>
@@ -889,6 +868,7 @@
                             </p>
                         </div>
                     </div>
+                    ${currentUser?.role === 'admin' ? `
                     <div class="flex gap-2">
                         <button onclick="editUser('${user.id}')" class="text-blue-400 hover:text-blue-300 p-2 hover:bg-gray-600 rounded-lg transition-colors">
                             <i class="bi bi-pencil"></i>
@@ -897,6 +877,7 @@
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
+                    ` : ''}
                 </div>
             `).join('');
         }
@@ -998,6 +979,10 @@
         }
 
         function showModelManager() {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem gerenciar modelos');
+                return;
+            }
             document.getElementById('modelModal').classList.remove('hidden');
             loadModels();
         }
@@ -1022,6 +1007,7 @@
                 renderItems(fullData);
                 updateSidebarStats(fullData);
                 updateAnalyticsCharts();
+                document.getElementById('total-count').textContent = fullData.length;
                 
             } catch (error) {
                 console.error('Erro:', error);
@@ -1056,17 +1042,15 @@
                             </span>
                         </div>
                         
-                        <!-- Ações -->
-                        ${currentUser ? `
+                        <!-- Ações - APENAS ADMIN PODE VER -->
+                        ${currentUser?.role === 'admin' ? `
                         <div class="flex gap-2">
                             <button onclick="editItem('${item.id}')" class="text-gray-400 hover:text-blue-400 bg-gray-700/50 p-2 rounded-lg transition-colors hover-scale" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            ${currentUser.role === 'admin' ? `
                             <button onclick="deleteItem('${item.id}')" class="text-gray-400 hover:text-red-400 bg-gray-700/50 p-2 rounded-lg transition-colors hover-scale" title="Excluir">
                                 <i class="bi bi-trash"></i>
                             </button>
-                            ` : ''}
                         </div>
                         ` : ''}
                     </div>
@@ -1334,19 +1318,6 @@
             document.getElementById('analytics-gpu-percent').textContent = Math.round(gpus/total*100) + '%';
             document.getElementById('analytics-outro-percent').textContent = Math.round(outros/total*100) + '%';
 
-            // Gráfico de tendência de defeitos
-            const defectsByMonth = {};
-            fullData.forEach(item => {
-                if (item.created_at && item.defeito_sintoma) {
-                    const date = new Date(item.created_at);
-                    const key = `${date.getMonth()+1}/${date.getFullYear()}`;
-                    if (!defectsByMonth[key]) defectsByMonth[key] = {};
-                    
-                    const defect = item.defeito_sintoma.split(' ').slice(0, 2).join(' ');
-                    defectsByMonth[key][defect] = (defectsByMonth[key][defect] || 0) + 1;
-                }
-            });
-
             // Gráfico de dificuldade
             const dificuldade = {
                 1: fullData.filter(i => i.nivel_dificuldade == 1).length,
@@ -1526,7 +1497,7 @@
         }
 
         // ============================================
-        // BUSCA INTELIGENTE
+        // BUSCA INTELIGENTE EM TEMPO REAL
         // ============================================
         function smartSearch() {
             const q = document.getElementById('mainSearch').value.toLowerCase().trim();
@@ -1534,6 +1505,7 @@
             
             if (q === '') {
                 renderItems(fullData);
+                document.getElementById('search-result-count').innerHTML = `Total: <span class="text-blue-400">${fullData.length}</span> registros`;
                 return;
             }
 
@@ -1562,7 +1534,8 @@
             });
             
             renderItems(filtered);
-            showNotification(`${filtered.length} resultados encontrados`, 'info');
+            document.getElementById('search-result-count').innerHTML = 
+                `Resultados: <span class="text-blue-400">${filtered.length}</span> de <span class="text-gray-400">${fullData.length}</span> registros`;
         }
 
         // ============================================
@@ -1637,8 +1610,8 @@
         };
 
         async function editItem(id) {
-            if (!currentUser) {
-                alert('Login necessário');
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem editar registros');
                 return;
             }
             
@@ -1665,7 +1638,7 @@
         }
 
         async function deleteItem(id) {
-            if (!currentUser || currentUser.role !== 'admin') {
+            if (currentUser?.role !== 'admin') {
                 alert('Apenas administradores podem excluir registros');
                 return;
             }
@@ -1711,6 +1684,11 @@
         }
 
         function addModel() {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem adicionar modelos');
+                return;
+            }
+            
             const name = document.getElementById('newModelName').value;
             if (!name) return;
             
@@ -1720,6 +1698,11 @@
         }
 
         function editModel(modelo) {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem editar modelos');
+                return;
+            }
+            
             const novoNome = prompt('Editar modelo:', modelo);
             if (novoNome && novoNome !== modelo) {
                 showNotification(`Modelo ${modelo} alterado para ${novoNome}`, 'success');
@@ -1728,32 +1711,13 @@
         }
 
         function deleteModel(modelo) {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem excluir modelos');
+                return;
+            }
+            
             if (!confirm(`Excluir todas as ocorrências do modelo ${modelo}?`)) return;
             showNotification('Função em desenvolvimento', 'info');
-        }
-
-        // ============================================
-        // FILTROS DE DATA
-        // ============================================
-        function setDateFilter(period) {
-            const now = new Date();
-            let filtered = fullData;
-
-            if (period === 'today') {
-                filtered = fullData.filter(item => {
-                    const date = new Date(item.created_at);
-                    return date.toDateString() === now.toDateString();
-                });
-            } else if (period === 'week') {
-                const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-                filtered = fullData.filter(item => new Date(item.created_at) >= weekAgo);
-            } else if (period === 'month') {
-                const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-                filtered = fullData.filter(item => new Date(item.created_at) >= monthAgo);
-            }
-
-            renderItems(filtered);
-            updateSidebarStats(filtered);
         }
 
         // ============================================
