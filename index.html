@@ -82,7 +82,7 @@
                         <h2 class="text-2xl font-black tracking-tight">
                             TECH<span class="text-blue-400">FIX</span>
                         </h2>
-                        <p class="text-xs text-gray-400">Enterprise v4.0</p>
+                        <p class="text-xs text-gray-400">Enterprise v5.0</p>
                     </div>
                 </div>
                 <button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-white">
@@ -501,13 +501,6 @@
                         <label class="block mb-2 text-sm">Email</label>
                         <input type="email" id="user_email" class="w-full bg-gray-700 rounded-lg p-2.5" required>
                     </div>
-                    <div class="relative">
-                        <label class="block mb-2 text-sm">Senha</label>
-                        <div class="relative">
-                            <input type="password" id="user_password" class="w-full bg-gray-700 rounded-lg p-2.5 password-input" required>
-                            <i class="bi bi-eye password-toggle text-gray-400 hover:text-white" onclick="togglePasswordVisibility('user_password', this)"></i>
-                        </div>
-                    </div>
                     <div>
                         <label class="block mb-2 text-sm">Nível</label>
                         <select id="user_role" class="w-full bg-gray-700 rounded-lg p-2.5" required>
@@ -519,6 +512,9 @@
                     <div class="md:col-span-2 flex gap-3">
                         <button type="submit" class="bg-green-600 px-6 py-2.5 rounded-lg hover:bg-green-700 transition-colors hover-scale">Salvar</button>
                         <button type="button" onclick="hideAddUserForm()" class="bg-gray-600 px-6 py-2.5 rounded-lg hover:bg-gray-700 transition-colors hover-scale">Cancelar</button>
+                    </div>
+                    <div class="md:col-span-2 text-xs text-gray-400">
+                        <i class="bi bi-info-circle mr-1"></i> A senha padrão será <span class="text-blue-400 font-bold">123</span>. O usuário deverá trocar no primeiro login.
                     </div>
                 </form>
             </div>
@@ -614,6 +610,43 @@
         </div>
     </div>
 
+    <!-- Modal de Troca de Senha -->
+    <div id="passwordModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black bg-opacity-90 backdrop-blur-sm">
+        <div class="glass-card rounded-2xl w-full max-w-md p-8 animate-slide-in">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center">
+                    <i class="bi bi-shield-lock text-blue-400 mr-2"></i>
+                    Primeiro Acesso
+                </h3>
+            </div>
+
+            <p class="text-gray-300 mb-4">Por segurança, você precisa trocar sua senha.</p>
+
+            <form id="passwordForm" class="space-y-4">
+                <div>
+                    <label class="block mb-2 text-sm font-medium">Nova Senha</label>
+                    <div class="relative">
+                        <input type="password" id="newPassword" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 password-input" required minlength="6">
+                        <i class="bi bi-eye password-toggle text-gray-400 hover:text-white" onclick="togglePasswordVisibility('newPassword', this)"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block mb-2 text-sm font-medium">Confirmar Nova Senha</label>
+                    <div class="relative">
+                        <input type="password" id="confirmPassword" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 password-input" required minlength="6">
+                        <i class="bi bi-eye password-toggle text-gray-400 hover:text-white" onclick="togglePasswordVisibility('confirmPassword', this)"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 rounded-xl font-bold hover-scale">
+                    <i class="bi bi-check-circle mr-2"></i>
+                    ALTERAR SENHA
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
         // ============================================
         // CONFIGURAÇÃO SUPABASE
@@ -630,6 +663,7 @@
         let users = [];
         let charts = {};
         let onlineUsers = [];
+        let tempUserEmail = null; // Para armazenar email durante troca de senha
 
         // ============================================
         // FUNÇÕES DE VISIBILIDADE DE SENHA
@@ -648,7 +682,48 @@
         }
 
         // ============================================
-        // AUTENTICAÇÃO REAL COM SUPABASE
+        // FUNÇÃO PARA CRIAR USUÁRIO (SENHA PADRÃO 123)
+        // ============================================
+        async function createUser(userData) {
+            if (currentUser?.role !== 'admin') {
+                showNotification('Apenas administradores podem criar usuários', 'error');
+                return;
+            }
+
+            try {
+                // 1. Criar no Authentication com senha padrão 123
+                const { data: authData, error: authError } = await _supabase.auth.signUp({
+                    email: userData.email,
+                    password: '123' // Senha padrão
+                });
+
+                if (authError) throw authError;
+
+                // 2. Inserir na tabela usuarios
+                const { error: dbError } = await _supabase
+                    .from('usuarios')
+                    .insert([{
+                        nome: userData.nome,
+                        email: userData.email,
+                        senha: '123', // Senha padrão
+                        role: userData.role,
+                        primeiro_acesso: true // Flag para forçar troca de senha
+                    }]);
+
+                if (dbError) throw dbError;
+
+                showNotification('Usuário criado com sucesso! Senha padrão: 123', 'success');
+                loadUsers();
+                hideAddUserForm();
+                document.getElementById('userForm').reset();
+
+            } catch (error) {
+                showNotification('Erro ao criar usuário: ' + error.message, 'error');
+            }
+        }
+
+        // ============================================
+        // AUTENTICAÇÃO COM VERIFICAÇÃO DE PRIMEIRO ACESSO
         // ============================================
         async function login(email, password) {
             try {
@@ -675,6 +750,13 @@
                     role: userData.role
                 };
 
+                // Verificar se é primeiro acesso (senha = 123)
+                if (password === '123') {
+                    tempUserEmail = email;
+                    showPasswordModal();
+                    return true;
+                }
+
                 // Atualizar último acesso
                 await _supabase
                     .from('usuarios')
@@ -696,6 +778,82 @@
                 return false;
             }
         }
+
+        // ============================================
+        // MODAL DE TROCA DE SENHA
+        // ============================================
+        function showPasswordModal() {
+            document.getElementById('passwordModal').classList.remove('hidden');
+        }
+
+        function hidePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+        }
+
+        // ============================================
+        // TROCAR SENHA
+        // ============================================
+        document.getElementById('passwordForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showNotification('As senhas não coincidem!', 'error');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showNotification('A senha deve ter no mínimo 6 caracteres', 'error');
+                return;
+            }
+
+            try {
+                // Atualizar senha no Authentication
+                const { error } = await _supabase.auth.updateUser({
+                    password: newPassword
+                });
+
+                if (error) throw error;
+
+                // Atualizar flag primeiro_acesso na tabela
+                await _supabase
+                    .from('usuarios')
+                    .update({ 
+                        senha: newPassword,
+                        primeiro_acesso: false,
+                        ultimo_acesso: new Date()
+                    })
+                    .eq('email', tempUserEmail);
+
+                // Recarregar dados do usuário
+                const { data: userData } = await _supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('email', tempUserEmail)
+                    .single();
+
+                currentUser = {
+                    email: tempUserEmail,
+                    nome: userData.nome,
+                    role: userData.role
+                };
+
+                hidePasswordModal();
+                updateUserInterface();
+
+                if (currentUser.role === 'admin') {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    loadUsers();
+                }
+
+                showNotification('Senha alterada com sucesso!', 'success');
+
+            } catch (error) {
+                showNotification('Erro ao alterar senha: ' + error.message, 'error');
+            }
+        };
 
         // Modal de login melhorado
         function showLoginModal() {
@@ -733,7 +891,7 @@
                         </button>
 
                         <p class="text-xs text-center text-gray-400 mt-4">
-                            Apenas usuários cadastrados podem adicionar/editar informações
+                            Novos usuários: senha padrão <span class="text-blue-400 font-bold">123</span> (será solicitada troca no primeiro login)
                         </p>
                     </form>
                 </div>
@@ -787,46 +945,6 @@
                         loadUsers();
                     }
                 }
-            }
-        }
-
-        // ============================================
-        // FUNÇÃO PARA CRIAR NOVOS USUÁRIOS (APENAS ADMIN)
-        // ============================================
-        async function createUser(userData) {
-            if (currentUser?.role !== 'admin') {
-                showNotification('Apenas administradores podem criar usuários', 'error');
-                return;
-            }
-
-            try {
-                // Criar no Authentication
-                const { data: authData, error: authError } = await _supabase.auth.signUp({
-                    email: userData.email,
-                    password: userData.password
-                });
-
-                if (authError) throw authError;
-
-                // Inserir na tabela usuarios
-                const { error: dbError } = await _supabase
-                    .from('usuarios')
-                    .insert([{
-                        nome: userData.nome,
-                        email: userData.email,
-                        senha: userData.password,
-                        role: userData.role
-                    }]);
-
-                if (dbError) throw dbError;
-
-                showNotification('Usuário criado com sucesso!', 'success');
-                loadUsers();
-                hideAddUserForm();
-                document.getElementById('userForm').reset();
-
-            } catch (error) {
-                showNotification('Erro ao criar usuário: ' + error.message, 'error');
             }
         }
 
@@ -916,7 +1034,7 @@
                         <div class="w-16 h-16 mx-auto rounded-full bg-gray-700 flex items-center justify-center mb-2 animate-float">
                             <i class="bi bi-person text-3xl text-gray-400"></i>
                         </div>
-                        <p class="text-sm text-gray-400 mb-2">Faça login para acessar recursos administrativos</p>
+                        <p class="text-sm text-gray-400 mb-2">Faça login para acessar recursos</p>
                         <button onclick="showLoginModal()" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-sm font-medium transition-colors hover-scale">
                             <i class="bi bi-box-arrow-in-right mr-1"></i> Login
                         </button>
@@ -1602,7 +1720,6 @@
             const userData = {
                 nome: document.getElementById('user_name').value,
                 email: document.getElementById('user_email').value,
-                password: document.getElementById('user_password').value,
                 role: document.getElementById('user_role').value
             };
 
