@@ -694,7 +694,7 @@
                 // 1. Criar no Authentication com senha padrão 123456
                 const { data: authData, error: authError } = await _supabase.auth.signUp({
                     email: userData.email,
-                    password: '123456' // Senha padrão
+                    password: '123456' // Senha padrão com 6 caracteres
                 });
 
                 if (authError) throw authError;
@@ -751,9 +751,16 @@
                 };
 
                 // Verificar se é primeiro acesso (senha = 123456)
-                if (password === '123456') {
+                if (password === '123456' || userData.primeiro_acesso === true) {
                     tempUserEmail = email;
                     showPasswordModal();
+                    
+                    // Marcar que precisa trocar senha
+                    await _supabase
+                        .from('usuarios')
+                        .update({ primeiro_acesso: true })
+                        .eq('email', email);
+                    
                     return true;
                 }
 
@@ -984,6 +991,7 @@
                                     ${user.role || 'user'}
                                 </span>
                             </p>
+                            ${user.primeiro_acesso ? '<span class="text-xs bg-yellow-600/20 text-yellow-400 px-2 py-0.5 rounded-full ml-2">1º acesso</span>' : ''}
                         </div>
                     </div>
                     ${currentUser?.role === 'admin' ? `
