@@ -514,7 +514,7 @@
                         <button type="button" onclick="hideAddUserForm()" class="bg-gray-600 px-6 py-2.5 rounded-lg hover:bg-gray-700 transition-colors hover-scale">Cancelar</button>
                     </div>
                     <div class="md:col-span-2 text-xs text-gray-400">
-                        <i class="bi bi-info-circle mr-1"></i> A senha padrão será <span class="text-blue-400 font-bold">123</span>. O usuário deverá trocar no primeiro login.
+                        <i class="bi bi-info-circle mr-1"></i> A senha padrão será <span class="text-blue-400 font-bold">123456</span>. O usuário deverá trocar no primeiro login.
                     </div>
                 </form>
             </div>
@@ -682,7 +682,7 @@
         }
 
         // ============================================
-        // FUNÇÃO PARA CRIAR USUÁRIO (SENHA PADRÃO 123)
+        // FUNÇÃO PARA CRIAR USUÁRIO (SENHA PADRÃO 123456)
         // ============================================
         async function createUser(userData) {
             if (currentUser?.role !== 'admin') {
@@ -691,10 +691,10 @@
             }
 
             try {
-                // 1. Criar no Authentication com senha padrão 123
+                // 1. Criar no Authentication com senha padrão 123456
                 const { data: authData, error: authError } = await _supabase.auth.signUp({
                     email: userData.email,
-                    password: '123' // Senha padrão
+                    password: '123456' // Senha padrão
                 });
 
                 if (authError) throw authError;
@@ -705,14 +705,14 @@
                     .insert([{
                         nome: userData.nome,
                         email: userData.email,
-                        senha: '123', // Senha padrão
+                        senha: '123456', // Senha padrão
                         role: userData.role,
                         primeiro_acesso: true // Flag para forçar troca de senha
                     }]);
 
                 if (dbError) throw dbError;
 
-                showNotification('Usuário criado com sucesso! Senha padrão: 123', 'success');
+                showNotification('Usuário criado com sucesso! Senha padrão: 123456', 'success');
                 loadUsers();
                 hideAddUserForm();
                 document.getElementById('userForm').reset();
@@ -750,8 +750,8 @@
                     role: userData.role
                 };
 
-                // Verificar se é primeiro acesso (senha = 123)
-                if (password === '123') {
+                // Verificar se é primeiro acesso (senha = 123456)
+                if (password === '123456') {
                     tempUserEmail = email;
                     showPasswordModal();
                     return true;
@@ -891,7 +891,7 @@
                         </button>
 
                         <p class="text-xs text-center text-gray-400 mt-4">
-                            Novos usuários: senha padrão <span class="text-blue-400 font-bold">123</span> (será solicitada troca no primeiro login)
+                            Novos usuários: senha padrão <span class="text-blue-400 font-bold">123456</span> (será solicitada troca no primeiro login)
                         </p>
                     </form>
                 </div>
