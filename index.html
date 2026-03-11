@@ -82,7 +82,7 @@
                         <h2 class="text-2xl font-black tracking-tight">
                             TECH<span class="text-blue-400">FIX</span>
                         </h2>
-                        <p class="text-xs text-gray-400">Enterprise v3.0</p>
+                        <p class="text-xs text-gray-400">Enterprise v4.0</p>
                     </div>
                 </div>
                 <button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-white">
@@ -559,25 +559,51 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-gray-700/30 p-4 rounded-xl">
-                    <h4 class="font-semibold mb-3">Tendência de Defeitos</h4>
+                    <h4 class="font-semibold mb-3">📊 Tendência de Defeitos</h4>
                     <div id="trend-chart" class="h-64"></div>
                 </div>
 
                 <div class="bg-gray-700/30 p-4 rounded-xl">
-                    <h4 class="font-semibold mb-3">Dificuldade dos Reparos</h4>
+                    <h4 class="font-semibold mb-3">📈 Dificuldade dos Reparos</h4>
                     <div id="difficulty-chart" class="h-64"></div>
                 </div>
 
                 <div class="bg-gray-700/30 p-4 rounded-xl">
-                    <h4 class="font-semibold mb-3">Top Técnicos</h4>
-                    <div id="top-technicians" class="space-y-2">
+                    <h4 class="font-semibold mb-3">🔧 Top Componentes</h4>
+                    <div id="top-components-analytics" class="space-y-2">
                         <!-- Dynamic content -->
                     </div>
                 </div>
 
                 <div class="bg-gray-700/30 p-4 rounded-xl">
-                    <h4 class="font-semibold mb-3">Previsão de Reparos</h4>
+                    <h4 class="font-semibold mb-3">📅 Previsão de Reparos</h4>
                     <div id="forecast-chart" class="h-64"></div>
+                </div>
+
+                <div class="bg-gray-700/30 p-4 rounded-xl col-span-2">
+                    <h4 class="font-semibold mb-3">📋 Análise Detalhada por Categoria</h4>
+                    <div class="grid grid-cols-4 gap-4 text-center">
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <p class="text-xs text-gray-400">Motherboards</p>
+                            <p class="text-2xl font-bold text-purple-400" id="analytics-mb">0</p>
+                            <p class="text-xs text-gray-500" id="analytics-mb-percent">0%</p>
+                        </div>
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <p class="text-xs text-gray-400">Notebooks</p>
+                            <p class="text-2xl font-bold text-blue-400" id="analytics-nb">0</p>
+                            <p class="text-xs text-gray-500" id="analytics-nb-percent">0%</p>
+                        </div>
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <p class="text-xs text-gray-400">Placas de Vídeo</p>
+                            <p class="text-2xl font-bold text-green-400" id="analytics-gpu">0</p>
+                            <p class="text-xs text-gray-500" id="analytics-gpu-percent">0%</p>
+                        </div>
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <p class="text-xs text-gray-400">Outros</p>
+                            <p class="text-2xl font-bold text-gray-400" id="analytics-outro">0</p>
+                            <p class="text-xs text-gray-500" id="analytics-outro-percent">0%</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -964,6 +990,7 @@
 
         function showAnalyticsModal() {
             document.getElementById('analyticsModal').classList.remove('hidden');
+            updateAnalyticsCharts();
         }
 
         function hideAnalyticsModal() {
@@ -994,6 +1021,7 @@
                 fullData = data || [];
                 renderItems(fullData);
                 updateSidebarStats(fullData);
+                updateAnalyticsCharts();
                 
             } catch (error) {
                 console.error('Erro:', error);
@@ -1283,6 +1311,104 @@
         }
 
         // ============================================
+        // ANALYTICS AVANÇADO
+        // ============================================
+        function updateAnalyticsCharts() {
+            if (!fullData || fullData.length === 0) return;
+
+            const total = fullData.length;
+            
+            // Atualizar cards de categoria
+            const motherboards = fullData.filter(i => i.tipo_equipamento === 'motherboard').length;
+            const notebooks = fullData.filter(i => i.tipo_equipamento === 'notebook').length;
+            const gpus = fullData.filter(i => i.tipo_equipamento === 'placa_video').length;
+            const outros = fullData.filter(i => i.tipo_equipamento === 'outro' || !i.tipo_equipamento).length;
+
+            document.getElementById('analytics-mb').textContent = motherboards;
+            document.getElementById('analytics-nb').textContent = notebooks;
+            document.getElementById('analytics-gpu').textContent = gpus;
+            document.getElementById('analytics-outro').textContent = outros;
+
+            document.getElementById('analytics-mb-percent').textContent = Math.round(motherboards/total*100) + '%';
+            document.getElementById('analytics-nb-percent').textContent = Math.round(notebooks/total*100) + '%';
+            document.getElementById('analytics-gpu-percent').textContent = Math.round(gpus/total*100) + '%';
+            document.getElementById('analytics-outro-percent').textContent = Math.round(outros/total*100) + '%';
+
+            // Gráfico de tendência de defeitos
+            const defectsByMonth = {};
+            fullData.forEach(item => {
+                if (item.created_at && item.defeito_sintoma) {
+                    const date = new Date(item.created_at);
+                    const key = `${date.getMonth()+1}/${date.getFullYear()}`;
+                    if (!defectsByMonth[key]) defectsByMonth[key] = {};
+                    
+                    const defect = item.defeito_sintoma.split(' ').slice(0, 2).join(' ');
+                    defectsByMonth[key][defect] = (defectsByMonth[key][defect] || 0) + 1;
+                }
+            });
+
+            // Gráfico de dificuldade
+            const dificuldade = {
+                1: fullData.filter(i => i.nivel_dificuldade == 1).length,
+                2: fullData.filter(i => i.nivel_dificuldade == 2).length,
+                3: fullData.filter(i => i.nivel_dificuldade == 3).length,
+                4: fullData.filter(i => i.nivel_dificuldade == 4).length
+            };
+
+            if (charts.difficulty) charts.difficulty.destroy();
+            
+            const difficultyOptions = {
+                series: [{
+                    name: 'Reparos',
+                    data: [dificuldade[1], dificuldade[2], dificuldade[3], dificuldade[4]]
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 250,
+                    toolbar: { show: false },
+                    background: 'transparent'
+                },
+                theme: { mode: 'dark' },
+                xaxis: {
+                    categories: ['Básico', 'Intermediário', 'Avançado', 'Expert'],
+                    labels: { style: { colors: '#9ca3af' } }
+                },
+                colors: ['#f59e0b', '#3b82f6', '#8b5cf6', '#ef4444']
+            };
+
+            charts.difficulty = new ApexCharts(document.querySelector("#difficulty-chart"), difficultyOptions);
+            charts.difficulty.render();
+
+            // Top componentes analytics
+            const componentes = {};
+            fullData.forEach(item => {
+                if (item.componentes_envolvidos) {
+                    item.componentes_envolvidos.split(',').forEach(comp => {
+                        const c = comp.trim();
+                        if (c) componentes[c] = (componentes[c] || 0) + 1;
+                    });
+                }
+            });
+
+            const topCompAnalytics = Object.entries(componentes)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10)
+                .map(([comp, count]) => `
+                    <div class="flex items-center justify-between p-2 bg-gray-800 rounded-lg">
+                        <span class="text-sm font-mono">${comp}</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div class="bg-purple-600 h-2 rounded-full" style="width: ${(count/total)*100}%"></div>
+                            </div>
+                            <span class="text-xs text-purple-400">${count}x</span>
+                        </div>
+                    </div>
+                `).join('');
+
+            document.getElementById('top-components-analytics').innerHTML = topCompAnalytics;
+        }
+
+        // ============================================
         // SIDEBAR ESTATÍSTICAS
         // ============================================
         function updateSidebarStats(data) {
@@ -1413,8 +1539,13 @@
 
             const filtered = fullData.filter(item => {
                 if (filter === 'all') {
-                    return Object.values(item).some(val => 
-                        val?.toString().toLowerCase().includes(q)
+                    return (
+                        item.modelo_aparelho?.toLowerCase().includes(q) ||
+                        item.versao_pba_board?.toLowerCase().includes(q) ||
+                        item.defeito_sintoma?.toLowerCase().includes(q) ||
+                        item.solucao_final?.toLowerCase().includes(q) ||
+                        item.diagnostico_tecnico?.toLowerCase().includes(q) ||
+                        item.componentes_envolvidos?.toLowerCase().includes(q)
                     );
                 }
                 
@@ -1431,6 +1562,7 @@
             });
             
             renderItems(filtered);
+            showNotification(`${filtered.length} resultados encontrados`, 'info');
         }
 
         // ============================================
@@ -1566,9 +1698,14 @@
             list.innerHTML = modelos.map(modelo => `
                 <div class="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
                     <span>${modelo}</span>
-                    <button onclick="deleteModel('${modelo}')" class="text-red-400 hover:text-red-300 p-2 hover:bg-gray-600 rounded-lg">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="editModel('${modelo}')" class="text-blue-400 hover:text-blue-300 p-2 hover:bg-gray-600 rounded-lg">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button onclick="deleteModel('${modelo}')" class="text-red-400 hover:text-red-300 p-2 hover:bg-gray-600 rounded-lg">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -1580,6 +1717,14 @@
             showNotification('Modelo adicionado à lista de sugestões', 'success');
             document.getElementById('newModelName').value = '';
             loadModels();
+        }
+
+        function editModel(modelo) {
+            const novoNome = prompt('Editar modelo:', modelo);
+            if (novoNome && novoNome !== modelo) {
+                showNotification(`Modelo ${modelo} alterado para ${novoNome}`, 'success');
+                loadModels();
+            }
         }
 
         function deleteModel(modelo) {
