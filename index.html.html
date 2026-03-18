@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechFix Pro Enterprise | Base de Conhecimento Técnico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * { font-family: 'Inter', sans-serif; }
+        
+        /* Animações e efeitos */
+        .glass-effect { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .glass-card { background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .hover-glow:hover { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        .hover-scale { transition: transform 0.2s; }
+        .hover-scale:hover { transform: scale(1.02); }
+        
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        /* Animações */
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+        
+        .animate-slide-in { animation: slideIn 0.3s ease-out; }
+        .animate-pulse-slow { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-spin-slow { animation: spin 3s linear infinite; }
+        .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); background-size: 1000px 100%; animation: shimmer 2s infinite; }
+        
+        /* Cards */
+        .tech-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .tech-card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.2), 0 8px 10px -6px rgba(59, 130, 246, 0.2); }
+        
+        /* Badges */
+        .badge { @apply px-2.5 py-0.5 rounded-full text-xs font-medium; }
+        .badge-motherboard { @apply bg-purple-900/50 text-purple-300 border border-purple-700; }
+        .badge-notebook { @apply bg-blue-900/50 text-blue-300 border border-blue-700; }
+        .badge-gpu { @apply bg-green-900/50 text-green-300 border border-green-700; }
+        .badge-defeito { @apply bg-yellow-900/50 text-yellow-300 border border-yellow-700; }
+        
+        /* Status indicators */
+        .status-dot { @apply w-2 h-2 rounded-full inline-block; }
+        .status-online { @apply bg-green-500 animate-pulse; }
+        .status-offline { @apply bg-gray-500; }
+        
+        /* Password visibility */
+        .password-input { padding-right: 40px; }
+        .password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; }
+        
+        /* Loading skeleton */
+        .skeleton { background: linear-gradient(90deg, #2d3748 25%, #4a5568 50%, #2d3748 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        
+        /* Select2 personalizado */
+        .defeito-select {
+            background-color: #374151;
+            border: 1px solid #4B5563;
+            color: white;
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            width: 100%;
+        }
+        .defeito-select option {
+            background-color: #1F2937;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 antialiased min-h-screen">
+
+    <!-- ============================================ -->
+    <!-- SIDEBAR ENTERPRISE - RICA EM INFORMAÇÕES    -->
+    <!-- ============================================ -->
+    <aside id="sidebar" class="fixed top-0 left-0 z-50 w-80 h-screen transition-transform -translate-x-full lg:translate-x-0 border-r border-gray-700/50 glass-card overflow-y-auto">
+        <div class="h-full px-4 py-6 flex flex-col">
+            <!-- Logo e Branding -->
+            <div class="flex items-center justify-between mb-8 px-2">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center animate-float">
+                        <i class="bi bi-cpu text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black tracking-tight">
+                            TECH<span class="text-blue-400">FIX</span>
+                        </h2>
+                        <p class="text-xs text-gray-400">Enterprise v6.0</p>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-white">
+                    <i class="bi bi-x-lg text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Perfil do Usuário com Status -->
+            <div id="user-profile-card" class="glass-effect rounded-2xl p-4 mb-6 border border-gray-700/50">
+                <!-- Dynamic user content -->
+            </div>
+
+            <!-- Menu Principal -->
+            <div class="space-y-2 mb-6">
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Menu Principal</div>
+                
+                <a href="#" onclick="fetchData()" class="flex items-center space-x-3 px-3 py-3 rounded-xl hover:bg-gray-700/50 transition-all group">
+                    <div class="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center group-hover:bg-blue-600 transition-colors">
+                        <i class="bi bi-speedometer2 text-gray-300 group-hover:text-white"></i>
+                    </div>
+                    <span class="font-medium">Dashboard</span>
+                    <span class="ml-auto bg-blue-600 text-xs px-2 py-1 rounded-full" id="total-repairs-sidebar">0</span>
+                </a>
+
+                <a href="#" onclick="showAddModal()" class="flex items-center space-x-3 px-3 py-3 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 hover:from-blue-600/30 hover:to-purple-600/30 transition-all group">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="bi bi-plus-circle-fill text-white"></i>
+                    </div>
+                    <span class="font-medium text-blue-400">Novo Registro Técnico</span>
+                </a>
+
+                <a href="#" onclick="showAnalyticsModal()" class="flex items-center space-x-3 px-3 py-3 rounded-xl hover:bg-gray-700/50 transition-all group">
+                    <div class="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center group-hover:bg-purple-600 transition-colors">
+                        <i class="bi bi-graph-up text-gray-300 group-hover:text-white"></i>
+                    </div>
+                    <span class="font-medium">Analytics Avançado</span>
+                </a>
+            </div>
+
+            <!-- Gráfico em Tempo Real na Sidebar -->
+            <div class="mb-6 px-3">
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">📈 Distribuição por Categoria</div>
+                <div id="sidebar-chart" class="h-32"></div>
+            </div>
+
+            <!-- Estatísticas Avançadas por Categoria -->
+            <div class="space-y-4 mb-6">
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">📊 Reparos por Categoria</div>
+                
+                <div class="space-y-2 px-3" id="category-stats">
+                    <!-- Motherboard -->
+                    <div class="flex items-center justify-between p-2 hover:bg-gray-700/30 rounded-lg transition-colors">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+                            <span class="text-sm">Motherboards</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-bold text-purple-400" id="stat-motherboard">0</span>
+                            <span class="text-xs text-gray-500" id="stat-motherboard-percent">(0%)</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Notebooks -->
+                    <div class="flex items-center justify-between p-2 hover:bg-gray-700/30 rounded-lg transition-colors">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span class="text-sm">Notebooks</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-bold text-blue-400" id="stat-notebook">0</span>
+                            <span class="text-xs text-gray-500" id="stat-notebook-percent">(0%)</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Placas de Vídeo -->
+                    <div class="flex items-center justify-between p-2 hover:bg-gray-700/30 rounded-lg transition-colors">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                            <span class="text-sm">Placas de Vídeo</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-bold text-green-400" id="stat-gpu">0</span>
+                            <span class="text-xs text-gray-500" id="stat-gpu-percent">(0%)</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Outros -->
+                    <div class="flex items-center justify-between p-2 hover:bg-gray-700/30 rounded-lg transition-colors">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 rounded-full bg-gray-500"></div>
+                            <span class="text-sm">Outros</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-bold text-gray-400" id="stat-outro">0</span>
+                            <span class="text-xs text-gray-500" id="stat-outro-percent">(0%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de Progresso com Animação -->
+                <div class="px-3 mt-4">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span>Completude da Base</span>
+                        <span id="completude-base" class="font-bold text-blue-400">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <div id="progress-bar" class="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-3 rounded-full transition-all duration-1000 ease-out relative">
+                            <div class="absolute inset-0 shimmer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Defeitos com Ícones -->
+            <div class="space-y-4 mb-6">
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">🔥 Top Defeitos</div>
+                <div id="top-defects" class="space-y-2 px-3">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+
+            <!-- Top Componentes Mais Citados -->
+            <div class="space-y-4 mb-6">
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">🔧 Componentes Frequentes</div>
+                <div id="top-components" class="space-y-2 px-3">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+
+            <!-- Gestão de Usuários (Admin Only) -->
+            <div id="admin-section" class="hidden space-y-4 mb-6 border-t border-gray-700 pt-4">
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 flex items-center">
+                    <i class="bi bi-shield-lock text-yellow-500 mr-2"></i> Administração
+                </div>
+                
+                <div class="px-3 space-y-2">
+                    <button onclick="showUserManager()" class="w-full flex items-center justify-between p-2 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors group">
+                        <span><i class="bi bi-people mr-2 group-hover:text-blue-400"></i>Gerenciar Usuários</span>
+                        <span class="bg-blue-600 text-xs px-2 py-1 rounded-full" id="user-count">0</span>
+                    </button>
+                    
+                    <button onclick="showDefeitoManager()" class="w-full flex items-center justify-between p-2 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors group">
+                        <span><i class="bi bi-exclamation-triangle mr-2 group-hover:text-yellow-400"></i>Gerenciar Defeitos</span>
+                        <span class="bg-yellow-600 text-xs px-2 py-1 rounded-full" id="defeito-count">0</span>
+                    </button>
+                    
+                    <button onclick="exportFullBackup()" class="w-full flex items-center p-2 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors group">
+                        <i class="bi bi-database-down mr-2 group-hover:text-blue-400"></i>Backup Completo
+                    </button>
+
+                    <button onclick="showModelManager()" class="w-full flex items-center p-2 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors group">
+                        <i class="bi bi-pencil-square mr-2 group-hover:text-blue-400"></i>Gerenciar Modelos
+                    </button>
+                </div>
+            </div>
+
+            <!-- Usuários Online com Avatares Animados -->
+            <div class="mt-auto pt-4 border-t border-gray-700">
+                <div class="flex items-center justify-between px-3 mb-2">
+                    <span class="text-xs text-gray-400"><i class="bi bi-person-badge mr-1"></i>Usuários Ativos</span>
+                    <span class="text-xs bg-green-600/20 text-green-400 px-2 py-0.5 rounded-full animate-pulse" id="online-count">1 online</span>
+                </div>
+                <div id="online-users" class="flex -space-x-2 px-2">
+                    <!-- Online users avatars -->
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="lg:ml-80 p-6 transition-all">
+        <!-- Header com Busca e Filtros -->
+        <div class="glass-card rounded-2xl p-4 mb-6">
+            <div class="flex flex-col lg:flex-row justify-between items-center gap-4">
+                <!-- Search Bar Aprimorada -->
+                <div class="relative w-full lg:w-2/3">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4">
+                        <i class="bi bi-search text-gray-400"></i>
+                    </div>
+                    <input type="text" id="mainSearch" onkeyup="smartSearch()" 
+                        class="w-full bg-gray-700/50 border border-gray-600 rounded-2xl pl-12 pr-32 py-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                        placeholder="Digite para pesquisar em tempo real...">
+                    
+                    <!-- Search Filters -->
+                    <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                        <select id="searchFilter" onchange="smartSearch()" class="bg-gray-700 text-sm rounded-lg border-0 py-1.5 pl-3 pr-8">
+                            <option value="all">Todos campos</option>
+                            <option value="modelo">Modelo</option>
+                            <option value="pba">PBA/Board</option>
+                            <option value="defeito">Defeito</option>
+                            <option value="solucao">Solução</option>
+                            <option value="componente">Componente</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Result count -->
+                <div class="text-sm text-gray-400" id="search-result-count">
+                    Total: <span id="total-count">0</span> registros
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="glass-card rounded-xl p-4 hover-scale">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400">Total Reparos</p>
+                        <p class="text-2xl font-bold" id="total-repairs">0</p>
+                    </div>
+                    <div class="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center">
+                        <i class="bi bi-tools text-blue-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-green-400">
+                    <i class="bi bi-arrow-up"></i> <span id="growth-rate">0%</span> esse mês
+                </div>
+            </div>
+
+            <div class="glass-card rounded-xl p-4 hover-scale">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400">Este Mês</p>
+                        <p class="text-2xl font-bold" id="month-repairs">0</p>
+                    </div>
+                    <div class="w-10 h-10 bg-green-600/20 rounded-lg flex items-center justify-center">
+                        <i class="bi bi-calendar-check text-green-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-xl p-4 hover-scale">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400">Média/Dia</p>
+                        <p class="text-2xl font-bold" id="avg-daily">0</p>
+                    </div>
+                    <div class="w-10 h-10 bg-purple-600/20 rounded-lg flex items-center justify-center">
+                        <i class="bi bi-graph-up text-purple-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-xl p-4 hover-scale">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400">Componentes Únicos</p>
+                        <p class="text-2xl font-bold" id="unique-components">0</p>
+                    </div>
+                    <div class="w-10 h-10 bg-yellow-600/20 rounded-lg flex items-center justify-center">
+                        <i class="bi bi-cpu text-yellow-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos Interativos -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Gráfico de Barras - Reparos por Mês -->
+            <div class="glass-card rounded-2xl p-4">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <i class="bi bi-bar-chart-fill text-blue-400 mr-2"></i>
+                    Reparos por Mês
+                </h3>
+                <div id="monthly-chart" class="h-64"></div>
+            </div>
+
+            <!-- Gráfico Pizza - Distribuição por Tipo -->
+            <div class="glass-card rounded-2xl p-4">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <i class="bi bi-pie-chart-fill text-purple-400 mr-2"></i>
+                    Distribuição por Tipo
+                </h3>
+                <div id="pie-chart" class="h-64"></div>
+            </div>
+        </div>
+
+        <!-- Cards Grid -->
+        <div id="main-grid" class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+            <!-- Cards serão inseridos aqui -->
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- MODAIS COMPLETOS                            -->
+    <!-- ============================================ -->
+
+    <!-- Modal de Registro (Adicionar/Editar) -->
+    <div id="itemModal" class="hidden fixed inset-0 z-[60] overflow-auto bg-black bg-opacity-90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl w-full max-w-4xl p-8 shadow-2xl animate-slide-in">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-2xl font-bold flex items-center">
+                    <i class="bi bi-pencil-square text-blue-400 mr-3 text-3xl"></i>
+                    <span id="modal-title">Novo Registro Técnico</span>
+                </h3>
+                <button onclick="hideModal()" class="text-gray-400 hover:text-white hover:rotate-90 transition-transform w-10 h-10 rounded-full hover:bg-gray-700 flex items-center justify-center">
+                    <i class="bi bi-x-lg text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="techForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input type="hidden" id="edit-id">
+                
+                <!-- Tipo de Equipamento -->
+                <div class="md:col-span-2">
+                    <label class="block mb-2 text-sm font-medium text-gray-300">
+                        <i class="bi bi-tags mr-2"></i>Categoria do Equipamento
+                    </label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <label class="flex items-center space-x-2 p-3 bg-gray-700/30 rounded-xl cursor-pointer hover:bg-gray-700/50 transition-colors hover-scale">
+                            <input type="radio" name="tipo" value="motherboard" class="text-blue-600" checked>
+                            <i class="bi bi-motherboard text-purple-400"></i>
+                            <span>Motherboard</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-3 bg-gray-700/30 rounded-xl cursor-pointer hover:bg-gray-700/50 transition-colors hover-scale">
+                            <input type="radio" name="tipo" value="notebook" class="text-blue-600">
+                            <i class="bi bi-laptop text-blue-400"></i>
+                            <span>Notebook</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-3 bg-gray-700/30 rounded-xl cursor-pointer hover:bg-gray-700/50 transition-colors hover-scale">
+                            <input type="radio" name="tipo" value="placa_video" class="text-blue-600">
+                            <i class="bi bi-gpu-card text-green-400"></i>
+                            <span>Placa de Vídeo</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-3 bg-gray-700/30 rounded-xl cursor-pointer hover:bg-gray-700/50 transition-colors hover-scale">
+                            <input type="radio" name="tipo" value="outro" class="text-blue-600">
+                            <i class="bi bi-box text-gray-400"></i>
+                            <span>Outro</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Campos principais -->
+                <div>
+                    <label class="block mb-2 text-sm font-medium">Modelo</label>
+                    <input type="text" id="f_modelo" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                
+                <div>
+                    <label class="block mb-2 text-sm font-medium">PBA/Board</label>
+                    <input type="text" id="f_pba" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                
+                <!-- Defeito/Sintoma como SELECT -->
+                <div class="md:col-span-2">
+                    <label class="block mb-2 text-sm font-medium">
+                        <i class="bi bi-exclamation-triangle text-yellow-500 mr-1"></i>
+                        Defeito/Sintoma
+                    </label>
+                    <select id="f_defeito" class="defeito-select" required>
+                        <option value="">Selecione um defeito...</option>
+                        <option value="NÃO LIGA">🔴 NÃO LIGA</option>
+                        <option value="NÃO GERA IMAGEM">🖥️ NÃO GERA IMAGEM</option>
+                        <option value="NÃO INICIA">⏱️ NÃO INICIA</option>
+                        <option value="TELA AZUL">💙 TELA AZUL</option>
+                        <option value="TRAVA NO LED DA CPU">⚠️ TRAVA NO LED DA CPU</option>
+                        <option value="TRAVA NO LED DO VGA">⚠️ TRAVA NO LED DO VGA</option>
+                        <option value="TRAVA NO LED DRAM">⚠️ TRAVA NO LED DRAM</option>
+                        <option value="FRAGMENTOS">📺 FRAGMENTOS</option>
+                        <option value="VRAM">🎮 VRAM</option>
+                        <option value="SLOT RAM">🔌 SLOT RAM</option>
+                        <option value="SOCKET">🔌 SOCKET</option>
+                        <option value="USB">🔌 USB</option>
+                        <option value="BGA">🔧 BGA</option>
+                        <option value="BIOS">⚙️ BIOS</option>
+                        <option value="RAM">💾 RAM</option>
+                        <option value="TRAVAMENTO">⏸️ TRAVAMENTO</option>
+                        <option value="SUPERAQUECIMENTO">🌡️ SUPERAQUECIMENTO</option>
+                        <option value="HDMI">📺 HDMI</option>
+                        <option value="DISPLAY PORT">📺 DISPLAY PORT</option>
+                        <option value="ÁUDIO">🎵 ÁUDIO</option>
+                        <option value="NVME">💽 NVME</option>
+                        <option value="SLOT PCI">🔌 SLOT PCI</option>
+                        <option value="KEYBOARD">⌨️ KEYBOARD</option>
+                        <option value="TOUCHPAD">🖱️ TOUCHPAD</option>
+                        <option value="LCD">📱 LCD</option>
+                        <option value="CABLE LVDS">🔌 CABLE LVDS</option>
+                        <option value="WIRELESS">📶 WIRELESS</option>
+                        <option value="LAN">🌐 LAN</option>
+                        <option value="POWER BOARD">⚡ POWER BOARD</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block mb-2 text-sm font-medium">Diagnóstico</label>
+                    <textarea id="f_diagnostico" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                
+                <div>
+                    <label class="block mb-2 text-sm font-medium">Solução</label>
+                    <textarea id="f_solucao" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-blue-500" required></textarea>
+                </div>
+
+                <div>
+                    <label class="block mb-2 text-sm font-medium">Componentes</label>
+                    <input type="text" id="f_componentes" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-blue-500" placeholder="Ex: U700, PQ301, IC502">
+                </div>
+
+                <div>
+                    <label class="block mb-2 text-sm font-medium">Dificuldade</label>
+                    <select id="f_dificuldade" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 focus:ring-2 focus:ring-blue-500">
+                        <option value="1">★ Básico</option>
+                        <option value="2">★★ Intermediário</option>
+                        <option value="3">★★★ Avançado</option>
+                        <option value="4">★★★★ Expert</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-2 flex gap-4">
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-bold rounded-xl px-5 py-4 transition-all hover-scale">
+                        <i class="bi bi-cloud-upload mr-2"></i>SALVAR REGISTRO
+                    </button>
+                    <button type="button" onclick="hideModal()" class="px-5 py-4 bg-gray-700 hover:bg-gray-600 rounded-xl transition-all hover-scale">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Gerenciamento de Defeitos -->
+    <div id="defeitoModal" class="hidden fixed inset-0 z-[60] overflow-auto bg-black bg-opacity-90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl w-full max-w-2xl p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center">
+                    <i class="bi bi-exclamation-triangle text-yellow-400 mr-3"></i>
+                    Gerenciar Defeitos
+                </h3>
+                <button onclick="hideDefeitoModal()" class="text-gray-400 hover:text-white"><i class="bi bi-x-lg text-2xl"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex gap-2">
+                    <input type="text" id="newDefeitoName" class="flex-1 bg-gray-700 rounded-lg p-3" placeholder="Novo defeito...">
+                    <select id="newDefeitoEmoji" class="bg-gray-700 rounded-lg p-3">
+                        <option value="🔴">🔴</option>
+                        <option value="🖥️">🖥️</option>
+                        <option value="⚠️">⚠️</option>
+                        <option value="💙">💙</option>
+                        <option value="🔧">🔧</option>
+                        <option value="⚡">⚡</option>
+                        <option value="🌡️">🌡️</option>
+                        <option value="🔌">🔌</option>
+                        <option value="💾">💾</option>
+                        <option value="📺">📺</option>
+                    </select>
+                    <button onclick="addDefeito()" class="bg-blue-600 px-6 rounded-lg hover:bg-blue-700 transition-colors hover-scale">
+                        <i class="bi bi-plus"></i> Adicionar
+                    </button>
+                </div>
+
+                <div id="defeitos-list" class="space-y-2 max-h-96 overflow-y-auto">
+                    <!-- Defeitos serão listados aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Gerenciamento de Usuários -->
+    <div id="userModal" class="hidden fixed inset-0 z-[60] overflow-auto bg-black bg-opacity-90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl w-full max-w-4xl p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center">
+                    <i class="bi bi-people-fill text-blue-400 mr-3"></i>
+                    Gerenciar Usuários
+                </h3>
+                <button onclick="hideUserModal()" class="text-gray-400 hover:text-white"><i class="bi bi-x-lg text-2xl"></i></button>
+            </div>
+
+            <!-- Lista de Usuários -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="font-semibold">Usuários Cadastrados</h4>
+                    <button onclick="showAddUserForm()" class="bg-blue-600 px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors hover-scale">
+                        <i class="bi bi-plus-circle mr-1"></i>Novo Usuário
+                    </button>
+                </div>
+                
+                <div class="space-y-3 max-h-96 overflow-y-auto pr-2" id="users-list">
+                    <!-- Users will be listed here -->
+                </div>
+            </div>
+
+            <!-- Formulário de Novo Usuário -->
+            <div id="newUserForm" class="hidden border-t border-gray-700 pt-6">
+                <h4 class="font-semibold mb-4">Adicionar Novo Usuário</h4>
+                <form id="userForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-2 text-sm">Nome</label>
+                        <input type="text" id="user_name" class="w-full bg-gray-700 rounded-lg p-2.5" required>
+                    </div>
+                    <div>
+                        <label class="block mb-2 text-sm">Email</label>
+                        <input type="email" id="user_email" class="w-full bg-gray-700 rounded-lg p-2.5" required>
+                    </div>
+                    <div>
+                        <label class="block mb-2 text-sm">Nível</label>
+                        <select id="user_role" class="w-full bg-gray-700 rounded-lg p-2.5" required>
+                            <option value="user">Usuário Comum</option>
+                            <option value="editor">Editor</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2 flex gap-3">
+                        <button type="submit" class="bg-green-600 px-6 py-2.5 rounded-lg hover:bg-green-700 transition-colors hover-scale">Salvar</button>
+                        <button type="button" onclick="hideAddUserForm()" class="bg-gray-600 px-6 py-2.5 rounded-lg hover:bg-gray-700 transition-colors hover-scale">Cancelar</button>
+                    </div>
+                    <div class="md:col-span-2 text-xs text-gray-400">
+                        <i class="bi bi-info-circle mr-1"></i> A senha padrão será <span class="text-blue-400 font-bold">123456</span>. O usuário deverá trocar no primeiro login.
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Analytics Avançado -->
+    <div id="analyticsModal" class="hidden fixed inset-0 z-[60] overflow-auto bg-black bg-opacity-90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl w-full max-w-6xl p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center">
+                    <i class="bi bi-graph-up text-purple-400 mr-3"></i>
+                    Analytics Avançado
+                </h3>
+                <button onclick="hideAnalyticsModal()" class="text-gray-400 hover:text-white"><i class="bi bi-x-lg text-2xl"></i></button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-gray-700/30 p-4 rounded-xl">
+                    <h4 class="font-semibold mb-3">📊 Tendência de Defeitos</h4>
+                    <div id="trend-chart" class="h-64"></div>
+                </div>
+
+                <div class="bg-gray-700/30 p-4 rounded-xl">
+                    <h4 class="font-semibold mb-3">📈 Dificuldade dos Reparos</h4>
+                    <div id="difficulty-chart" class="h-64"></div>
+                </div>
+
+                <div class="bg-gray-700/30 p-4 rounded-xl">
+                    <h4 class="font-semibold mb-3">🔧 Top Componentes</h4>
+                    <div id="top-components-analytics" class="space-y-2 max-h-64 overflow-y-auto">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <div class="bg-gray-700/30 p-4 rounded-xl">
+                    <h4 class="font-semibold mb-3">📅 Previsão de Reparos</h4>
+                    <div id="forecast-chart" class="h-64"></div>
+                </div>
+
+                <div class="bg-gray-700/30 p-4 rounded-xl col-span-2">
+                    <h4 class="font-semibold mb-3">📋 Análise Detalhada por Categoria</h4>
+                    <div class="grid grid-cols-4 gap-4 text-center">
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <p class="text-xs text-gray-400">Motherboards</p>
+                            <p class="text-2xl font-bold text-purple-400" id="analytics-mb">0</p>
+                            <p class="text-xs text-gray-500" id="analytics-mb-percent">0%</p>
+                        </div>
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <p class="text-xs text-gray-400">Notebooks</p>
+                            <p class="text-2xl font-bold text-blue-400" id="analytics-nb">0</p>
+                            <p class="text-xs text-gray-500" id="analytics-nb-percent">0%</p>
+                        </div>
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <p class="text-xs text-gray-400">Placas de Vídeo</p>
+                            <p class="text-2xl font-bold text-green-400" id="analytics-gpu">0</p>
+                            <p class="text-xs text-gray-500" id="analytics-gpu-percent">0%</p>
+                        </div>
+                        <div class="p-3 bg-gray-800 rounded-lg">
+                            <p class="text-xs text-gray-400">Outros</p>
+                            <p class="text-2xl font-bold text-gray-400" id="analytics-outro">0</p>
+                            <p class="text-xs text-gray-500" id="analytics-outro-percent">0%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gerenciar Modelos -->
+    <div id="modelModal" class="hidden fixed inset-0 z-[60] overflow-auto bg-black bg-opacity-90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl w-full max-w-2xl p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center">
+                    <i class="bi bi-pencil-square text-blue-400 mr-3"></i>
+                    Gerenciar Modelos
+                </h3>
+                <button onclick="hideModelModal()" class="text-gray-400 hover:text-white"><i class="bi bi-x-lg text-2xl"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex gap-2">
+                    <input type="text" id="newModelName" class="flex-1 bg-gray-700 rounded-lg p-3" placeholder="Nome do novo modelo...">
+                    <button onclick="addModel()" class="bg-blue-600 px-6 rounded-lg hover:bg-blue-700 transition-colors hover-scale">
+                        <i class="bi bi-plus"></i> Adicionar
+                    </button>
+                </div>
+
+                <div id="models-list" class="space-y-2 max-h-96 overflow-y-auto">
+                    <!-- Models will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Troca de Senha -->
+    <div id="passwordModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black bg-opacity-90 backdrop-blur-sm">
+        <div class="glass-card rounded-2xl w-full max-w-md p-8 animate-slide-in">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center">
+                    <i class="bi bi-shield-lock text-blue-400 mr-2"></i>
+                    Primeiro Acesso
+                </h3>
+            </div>
+
+            <p class="text-gray-300 mb-4">Por segurança, você precisa trocar sua senha.</p>
+
+            <form id="passwordForm" class="space-y-4">
+                <div>
+                    <label class="block mb-2 text-sm font-medium">Nova Senha</label>
+                    <div class="relative">
+                        <input type="password" id="newPassword" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 password-input" required minlength="6">
+                        <i class="bi bi-eye password-toggle text-gray-400 hover:text-white" onclick="togglePasswordVisibility('newPassword', this)"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block mb-2 text-sm font-medium">Confirmar Nova Senha</label>
+                    <div class="relative">
+                        <input type="password" id="confirmPassword" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 password-input" required minlength="6">
+                        <i class="bi bi-eye password-toggle text-gray-400 hover:text-white" onclick="togglePasswordVisibility('confirmPassword', this)"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 rounded-xl font-bold hover-scale">
+                    <i class="bi bi-check-circle mr-2"></i>
+                    ALTERAR SENHA
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURAÇÃO SUPABASE
+        // ============================================
+        const SUPABASE_URL = 'https://xeehcvheddeduxfqphct.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlZWhjdmhlZGRlZHV4ZnFwaGN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxODg4NjMsImV4cCI6MjA4ODc2NDg2M30.7qQPt8ftqn1hvb3oAE16oVuMuhqjrAETkiGiP6kIV_Q';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ============================================
+        // VARIÁVEIS GLOBAIS
+        // ============================================
+        let fullData = [];
+        let currentUser = null;
+        let users = [];
+        let charts = {};
+        let onlineUsers = [];
+        let tempUserEmail = null;
+        
+        // Lista de defeitos padrão
+        let defeitosLista = [
+            { emoji: '🔴', nome: 'NÃO LIGA' },
+            { emoji: '🖥️', nome: 'NÃO GERA IMAGEM' },
+            { emoji: '⏱️', nome: 'NÃO INICIA' },
+            { emoji: '💙', nome: 'TELA AZUL' },
+            { emoji: '⚠️', nome: 'TRAVA NO LED DA CPU' },
+            { emoji: '⚠️', nome: 'TRAVA NO LED DO VGA' },
+            { emoji: '⚠️', nome: 'TRAVA NO LED DRAM' },
+            { emoji: '📺', nome: 'FRAGMENTOS' },
+            { emoji: '🎮', nome: 'VRAM' },
+            { emoji: '🔌', nome: 'SLOT RAM' },
+            { emoji: '🔌', nome: 'SOCKET' },
+            { emoji: '🔌', nome: 'USB' },
+            { emoji: '🔧', nome: 'BGA' },
+            { emoji: '⚙️', nome: 'BIOS' },
+            { emoji: '💾', nome: 'RAM' },
+            { emoji: '⏸️', nome: 'TRAVAMENTO' },
+            { emoji: '🌡️', nome: 'SUPERAQUECIMENTO' },
+            { emoji: '📺', nome: 'HDMI' },
+            { emoji: '📺', nome: 'DISPLAY PORT' },
+            { emoji: '🎵', nome: 'ÁUDIO' },
+            { emoji: '💽', nome: 'NVME' },
+            { emoji: '🔌', nome: 'SLOT PCI' },
+            { emoji: '⌨️', nome: 'KEYBOARD' },
+            { emoji: '🖱️', nome: 'TOUCHPAD' },
+            { emoji: '📱', nome: 'LCD' },
+            { emoji: '🔌', nome: 'CABLE LVDS' },
+            { emoji: '📶', nome: 'WIRELESS' },
+            { emoji: '🌐', nome: 'LAN' },
+            { emoji: '⚡', nome: 'POWER BOARD' }
+        ];
+
+        // ============================================
+        // FUNÇÕES DE VISIBILIDADE DE SENHA
+        // ============================================
+        function togglePasswordVisibility(inputId, icon) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+
+        // ============================================
+        // FUNÇÃO PARA CARREGAR DEFEITOS NO SELECT
+        // ============================================
+        function carregarDefeitosSelect() {
+            const select = document.getElementById('f_defeito');
+            if (!select) return;
+            
+            // Salvar valor selecionado atual
+            const valorAtual = select.value;
+            
+            // Limpar opções
+            select.innerHTML = '<option value="">Selecione um defeito...</option>';
+            
+            // Adicionar defeitos da lista
+            defeitosLista.forEach(defeito => {
+                const option = document.createElement('option');
+                option.value = defeito.nome;
+                option.textContent = `${defeito.emoji} ${defeito.nome}`;
+                select.appendChild(option);
+            });
+            
+            // Restaurar valor selecionado se existir
+            if (valorAtual) {
+                select.value = valorAtual;
+            }
+            
+            // Atualizar contador
+            document.getElementById('defeito-count').textContent = defeitosLista.length;
+        }
+
+        // ============================================
+        // FUNÇÃO PARA ATUALIZAR LISTA DE DEFEITOS NO MODAL
+        // ============================================
+        function atualizarListaDefeitos() {
+            const list = document.getElementById('defeitos-list');
+            if (!list) return;
+            
+            list.innerHTML = defeitosLista.map((defeito, index) => `
+                <div class="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">${defeito.emoji}</span>
+                        <span class="font-medium">${defeito.nome}</span>
+                    </div>
+                    ${currentUser?.role === 'admin' ? `
+                    <div class="flex gap-2">
+                        <button onclick="editarDefeito(${index})" class="text-blue-400 hover:text-blue-300 p-2 hover:bg-gray-600 rounded-lg">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button onclick="removerDefeito(${index})" class="text-red-400 hover:text-red-300 p-2 hover:bg-gray-600 rounded-lg">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+            `).join('');
+            
+            document.getElementById('defeito-count').textContent = defeitosLista.length;
+            carregarDefeitosSelect();
+        }
+
+        // ============================================
+        // FUNÇÕES DE GERENCIAMENTO DE DEFEITOS
+        // ============================================
+        function addDefeito() {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem adicionar defeitos');
+                return;
+            }
+            
+            const nome = document.getElementById('newDefeitoName').value.trim();
+            const emoji = document.getElementById('newDefeitoEmoji').value;
+            
+            if (!nome) {
+                showNotification('Digite um nome para o defeito', 'error');
+                return;
+            }
+            
+            defeitosLista.push({ emoji, nome });
+            atualizarListaDefeitos();
+            
+            document.getElementById('newDefeitoName').value = '';
+            showNotification('Defeito adicionado com sucesso!', 'success');
+        }
+
+        function editarDefeito(index) {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem editar defeitos');
+                return;
+            }
+            
+            const defeito = defeitosLista[index];
+            const novoNome = prompt('Editar nome do defeito:', defeito.nome);
+            
+            if (novoNome && novoNome.trim()) {
+                defeitosLista[index].nome = novoNome.trim();
+                atualizarListaDefeitos();
+                showNotification('Defeito atualizado com sucesso!', 'success');
+            }
+        }
+
+        function removerDefeito(index) {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem remover defeitos');
+                return;
+            }
+            
+            if (confirm('Tem certeza que deseja remover este defeito?')) {
+                defeitosLista.splice(index, 1);
+                atualizarListaDefeitos();
+                showNotification('Defeito removido com sucesso!', 'success');
+            }
+        }
+
+        // ============================================
+        // FUNÇÃO PARA CRIAR USUÁRIO
+        // ============================================
+        async function createUser(userData) {
+            if (currentUser?.role !== 'admin') {
+                showNotification('Apenas administradores podem criar usuários', 'error');
+                return;
+            }
+
+            try {
+                const { data: authData, error: authError } = await _supabase.auth.signUp({
+                    email: userData.email,
+                    password: '123456',
+                    options: {
+                        data: {
+                            nome: userData.nome,
+                            role: userData.role
+                        }
+                    }
+                });
+
+                if (authError) throw authError;
+
+                const { error: dbError } = await _supabase
+                    .from('usuarios')
+                    .insert([{
+                        nome: userData.nome,
+                        email: userData.email,
+                        senha: '123456',
+                        role: userData.role,
+                        primeiro_acesso: true
+                    }]);
+
+                if (dbError) throw dbError;
+
+                showNotification('Usuário criado com sucesso! Senha padrão: 123456', 'success');
+                loadUsers();
+                hideAddUserForm();
+                document.getElementById('userForm').reset();
+
+            } catch (error) {
+                showNotification('Erro ao criar usuário: ' + error.message, 'error');
+            }
+        }
+
+        // ============================================
+        // AUTENTICAÇÃO
+        // ============================================
+        async function login(email, password) {
+            try {
+                const { data, error } = await _supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                const { data: userData, error: userError } = await _supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('email', email)
+                    .single();
+
+                if (userError) throw userError;
+
+                currentUser = {
+                    id: data.user.id,
+                    email: data.user.email,
+                    nome: userData.nome,
+                    role: userData.role
+                };
+
+                if (password === '123456' || userData.primeiro_acesso === true) {
+                    tempUserEmail = email;
+                    showPasswordModal();
+                    
+                    await _supabase
+                        .from('usuarios')
+                        .update({ primeiro_acesso: true })
+                        .eq('email', email);
+                    
+                    return true;
+                }
+
+                await _supabase
+                    .from('usuarios')
+                    .update({ ultimo_acesso: new Date() })
+                    .eq('email', email);
+
+                updateUserInterface();
+                
+                if (currentUser.role === 'admin') {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    loadUsers();
+                }
+
+                showNotification(`Bem-vindo, ${currentUser.nome}!`, 'success');
+                return true;
+
+            } catch (error) {
+                showNotification('Erro no login: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        // Modal de login
+        function showLoginModal() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black bg-opacity-90 backdrop-blur-sm';
+            modal.innerHTML = `
+                <div class="glass-card rounded-2xl w-full max-w-md p-8 animate-slide-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold flex items-center">
+                            <i class="bi bi-shield-lock text-blue-400 mr-2"></i>
+                            Login TechFix Pro
+                        </h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-white">
+                            <i class="bi bi-x-lg text-xl"></i>
+                        </button>
+                    </div>
+
+                    <form id="loginForm" class="space-y-4">
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">Email</label>
+                            <input type="email" id="loginEmail" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3" required>
+                        </div>
+
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">Senha</label>
+                            <div class="relative">
+                                <input type="password" id="loginPassword" class="w-full bg-gray-700 border border-gray-600 rounded-xl p-3 password-input" required>
+                                <i class="bi bi-eye password-toggle text-gray-400 hover:text-white" onclick="togglePasswordVisibility('loginPassword', this)"></i>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 rounded-xl font-bold hover-scale">
+                            <i class="bi bi-box-arrow-in-right mr-2"></i>
+                            ENTRAR
+                        </button>
+
+                        <p class="text-xs text-center text-gray-400 mt-4">
+                            Novos usuários: senha padrão <span class="text-blue-400 font-bold">123456</span>
+                        </p>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            document.getElementById('loginForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                const success = await login(email, password);
+                if (success) {
+                    modal.remove();
+                }
+            };
+        }
+
+        // Logout
+        async function logout() {
+            await _supabase.auth.signOut();
+            currentUser = null;
+            document.getElementById('admin-section').classList.add('hidden');
+            updateUserInterface();
+            showNotification('Logout realizado com sucesso', 'info');
+        }
+
+        // Verificar sessão
+        async function checkSession() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            
+            if (session) {
+                const { data: userData } = await _supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('email', session.user.email)
+                    .single();
+
+                if (userData) {
+                    currentUser = {
+                        id: session.user.id,
+                        email: session.user.email,
+                        nome: userData.nome,
+                        role: userData.role
+                    };
+                    updateUserInterface();
+                    
+                    if (currentUser.role === 'admin') {
+                        document.getElementById('admin-section').classList.remove('hidden');
+                        loadUsers();
+                    }
+                }
+            }
+        }
+
+        // Modal de troca de senha
+        function showPasswordModal() {
+            document.getElementById('passwordModal').classList.remove('hidden');
+        }
+
+        function hidePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+        }
+
+        // Trocar senha
+        document.getElementById('passwordForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showNotification('As senhas não coincidem!', 'error');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showNotification('A senha deve ter no mínimo 6 caracteres', 'error');
+                return;
+            }
+
+            try {
+                const { error } = await _supabase.auth.updateUser({
+                    password: newPassword
+                });
+
+                if (error) throw error;
+
+                await _supabase
+                    .from('usuarios')
+                    .update({ 
+                        senha: newPassword,
+                        primeiro_acesso: false,
+                        ultimo_acesso: new Date()
+                    })
+                    .eq('email', tempUserEmail);
+
+                const { data: userData } = await _supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('email', tempUserEmail)
+                    .single();
+
+                currentUser = {
+                    email: tempUserEmail,
+                    nome: userData.nome,
+                    role: userData.role
+                };
+
+                hidePasswordModal();
+                updateUserInterface();
+
+                if (currentUser.role === 'admin') {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    loadUsers();
+                }
+
+                showNotification('Senha alterada com sucesso!', 'success');
+
+            } catch (error) {
+                showNotification('Erro ao alterar senha: ' + error.message, 'error');
+            }
+        };
+
+        // ============================================
+        // SISTEMA DE USUÁRIOS
+        // ============================================
+        async function loadUsers() {
+            try {
+                const { data, error } = await _supabase
+                    .from('usuarios')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                
+                users = data || [];
+                document.getElementById('user-count').textContent = users.length;
+                updateUsersList();
+                
+            } catch (error) {
+                console.error('Erro ao carregar usuários:', error);
+            }
+        }
+
+        function updateUsersList() {
+            const list = document.getElementById('users-list');
+            list.innerHTML = users.map(user => `
+                <div class="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg hover-scale">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                            <span class="text-lg font-bold">${user.nome?.charAt(0) || 'U'}</span>
+                        </div>
+                        <div>
+                            <p class="font-medium">${user.nome || 'Sem nome'}</p>
+                            <p class="text-xs text-gray-400">${user.email} • 
+                                <span class="${user.role === 'admin' ? 'text-yellow-400' : user.role === 'editor' ? 'text-blue-400' : 'text-gray-400'}">
+                                    ${user.role || 'user'}
+                                </span>
+                            </p>
+                            ${user.primeiro_acesso ? '<span class="text-xs bg-yellow-600/20 text-yellow-400 px-2 py-0.5 rounded-full ml-2">1º acesso</span>' : ''}
+                        </div>
+                    </div>
+                    ${currentUser?.role === 'admin' ? `
+                    <div class="flex gap-2">
+                        <button onclick="editUser('${user.id}')" class="text-blue-400 hover:text-blue-300 p-2 hover:bg-gray-600 rounded-lg transition-colors">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button onclick="deleteUser('${user.id}')" class="text-red-400 hover:text-red-300 p-2 hover:bg-gray-600 rounded-lg transition-colors">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function updateUserInterface() {
+            const profileCard = document.getElementById('user-profile-card');
+            
+            if (currentUser) {
+                const roleLabels = {
+                    'admin': '👑 Administrador',
+                    'editor': '✏️ Editor',
+                    'user': '👤 Usuário'
+                };
+                
+                profileCard.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center animate-pulse">
+                            <span class="text-xl font-bold">${currentUser.nome?.charAt(0) || 'U'}</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-bold">${currentUser.nome || 'Usuário'}</p>
+                            <p class="text-xs text-gray-400">${roleLabels[currentUser.role] || 'Usuário'}</p>
+                        </div>
+                        <button onclick="logout()" class="text-gray-400 hover:text-white p-2 hover:bg-gray-700 rounded-lg transition-colors">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </div>
+                    <div class="mt-3 text-xs text-gray-400 flex items-center">
+                        <i class="bi bi-envelope mr-1"></i> ${currentUser.email}
+                        <span class="ml-auto status-dot status-online"></span>
+                    </div>
+                `;
+            } else {
+                profileCard.innerHTML = `
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto rounded-full bg-gray-700 flex items-center justify-center mb-2 animate-float">
+                            <i class="bi bi-person text-3xl text-gray-400"></i>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-2">Faça login para acessar recursos</p>
+                        <button onclick="showLoginModal()" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-sm font-medium transition-colors hover-scale">
+                            <i class="bi bi-box-arrow-in-right mr-1"></i> Login
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================
+        // FUNÇÕES DE MODAL
+        // ============================================
+        function showAddModal() {
+            if (!currentUser) {
+                if (confirm('Você precisa estar logado para adicionar registros. Deseja fazer login?')) {
+                    showLoginModal();
+                }
+                return;
+            }
+            
+            document.getElementById('edit-id').value = '';
+            document.getElementById('techForm').reset();
+            document.querySelector('input[name="tipo"][value="motherboard"]').checked = true;
+            document.getElementById('modal-title').innerHTML = '<i class="bi bi-plus-circle text-blue-400 mr-3"></i>Novo Registro Técnico';
+            document.getElementById('itemModal').classList.remove('hidden');
+        }
+
+        function hideModal() {
+            document.getElementById('itemModal').classList.add('hidden');
+        }
+
+        function showUserManager() {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem gerenciar usuários');
+                return;
+            }
+            document.getElementById('userModal').classList.remove('hidden');
+            loadUsers();
+        }
+
+        function hideUserModal() {
+            document.getElementById('userModal').classList.add('hidden');
+            document.getElementById('newUserForm').classList.add('hidden');
+        }
+
+        function showAddUserForm() {
+            document.getElementById('newUserForm').classList.remove('hidden');
+        }
+
+        function hideAddUserForm() {
+            document.getElementById('newUserForm').classList.add('hidden');
+        }
+
+        function showAnalyticsModal() {
+            document.getElementById('analyticsModal').classList.remove('hidden');
+            updateAnalyticsCharts();
+        }
+
+        function hideAnalyticsModal() {
+            document.getElementById('analyticsModal').classList.add('hidden');
+        }
+
+        function showModelManager() {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem gerenciar modelos');
+                return;
+            }
+            document.getElementById('modelModal').classList.remove('hidden');
+            loadModels();
+        }
+
+        function hideModelModal() {
+            document.getElementById('modelModal').classList.add('hidden');
+        }
+
+        function showDefeitoManager() {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem gerenciar defeitos');
+                return;
+            }
+            document.getElementById('defeitoModal').classList.remove('hidden');
+            atualizarListaDefeitos();
+        }
+
+        function hideDefeitoModal() {
+            document.getElementById('defeitoModal').classList.add('hidden');
+        }
+
+        // ============================================
+        // FUNÇÕES CRUD
+        // ============================================
+        async function fetchData() {
+            try {
+                const { data, error } = await _supabase
+                    .from('base_conhecimento')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                
+                fullData = data || [];
+                renderItems(fullData);
+                updateSidebarStats(fullData);
+                updateAnalyticsCharts();
+                document.getElementById('total-count').textContent = fullData.length;
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                showNotification('Erro ao carregar dados', 'error');
+            }
+        }
+
+        function renderItems(items) {
+            const grid = document.getElementById('main-grid');
+            
+            if (!items || items.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-3 text-center py-20">
+                        <i class="bi bi-archive text-6xl text-gray-600 mb-4"></i>
+                        <h3 class="text-2xl font-bold text-gray-400">Nenhum registro encontrado</h3>
+                        <p class="text-gray-500 mt-2">Clique em "Novo Registro" para adicionar o primeiro caso técnico</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = items.map(item => {
+                // Encontrar emoji para o defeito
+                const defeitoEncontrado = defeitosLista.find(d => d.nome === item.defeito_sintoma);
+                const emojiDefeito = defeitoEncontrado ? defeitoEncontrado.emoji : '🔴';
+                
+                return `
+                <div class="tech-card glass-card rounded-2xl p-6 hover-glow" data-id="${item.id}">
+                    <!-- Header do Card -->
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex gap-2">
+                            <span class="badge ${getBadgeClass(item.tipo_equipamento)}">
+                                ${getTipoIcon(item.tipo_equipamento)} ${getTipoLabel(item.tipo_equipamento)}
+                            </span>
+                            <span class="badge badge-defeito">
+                                ${emojiDefeito} ${item.defeito_sintoma}
+                            </span>
+                            <span class="bg-gray-700 text-xs px-2 py-1 rounded-full">
+                                <i class="bi bi-motherboard mr-1"></i>${item.versao_pba_board || 'N/A'}
+                            </span>
+                        </div>
+                        
+                        <!-- Ações - APENAS ADMIN PODE VER -->
+                        ${currentUser?.role === 'admin' ? `
+                        <div class="flex gap-2">
+                            <button onclick="editItem('${item.id}')" class="text-gray-400 hover:text-blue-400 bg-gray-700/50 p-2 rounded-lg transition-colors hover-scale" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button onclick="deleteItem('${item.id}')" class="text-gray-400 hover:text-red-400 bg-gray-700/50 p-2 rounded-lg transition-colors hover-scale" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Título do Modelo -->
+                    <h4 class="text-2xl font-black text-white mb-3">${item.modelo_aparelho}</h4>
+
+                    <!-- Informações do Reparo -->
+                    <div class="space-y-3">
+                        <div class="flex items-start bg-blue-500/10 p-3 rounded-xl border border-blue-500/20">
+                            <i class="bi bi-search text-blue-500 mt-1 mr-3"></i>
+                            <div>
+                                <span class="text-xs font-bold text-blue-500 uppercase">Diagnóstico</span>
+                                <p class="text-gray-300 text-sm">${item.diagnostico_tecnico || 'Não informado'}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start bg-green-500/10 p-3 rounded-xl border border-green-500/20">
+                            <i class="bi bi-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <span class="text-xs font-bold text-green-500 uppercase">Solução</span>
+                                <p class="text-green-100 font-medium">${item.solucao_final}</p>
+                            </div>
+                        </div>
+
+                        <!-- Componentes -->
+                        ${item.componentes_envolvidos ? `
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            ${item.componentes_envolvidos.split(',').map(c => `
+                                <span class="bg-purple-900/30 text-purple-300 text-xs px-3 py-1.5 rounded-full border border-purple-700/30 hover-scale">
+                                    <i class="bi bi-cpu mr-1"></i>${c.trim()}
+                                </span>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+
+                        <!-- Footer do Card -->
+                        <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-700/50">
+                            <div class="flex items-center space-x-2 text-xs text-gray-400">
+                                <i class="bi bi-clock"></i>
+                                <span>${new Date(item.created_at).toLocaleDateString('pt-BR')}</span>
+                                <span class="status-dot ${item.id ? 'status-online' : 'status-offline'}"></span>
+                            </div>
+                            <div class="flex items-center">
+                                ${getDificuldadeStars(item.nivel_dificuldade)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // Funções auxiliares
+        function getBadgeClass(tipo) {
+            const classes = {
+                'motherboard': 'badge-motherboard',
+                'notebook': 'badge-notebook',
+                'placa_video': 'badge-gpu',
+                'outro': 'bg-gray-700 text-gray-300'
+            };
+            return classes[tipo] || classes.outro;
+        }
+
+        function getTipoIcon(tipo) {
+            const icons = {
+                'motherboard': '🖥️',
+                'notebook': '💻',
+                'placa_video': '🎮',
+                'outro': '📦'
+            };
+            return icons[tipo] || '📦';
+        }
+
+        function getTipoLabel(tipo) {
+            const labels = {
+                'motherboard': 'Motherboard',
+                'notebook': 'Notebook',
+                'placa_video': 'GPU',
+                'outro': 'Outro'
+            };
+            return labels[tipo] || 'Outro';
+        }
+
+        function getDificuldadeStars(nivel) {
+            const n = parseInt(nivel) || 1;
+            return '⭐'.repeat(n) + '☆'.repeat(4 - n);
+        }
+
+        // ============================================
+        // FUNÇÃO DE EDITAR ITEM
+        // ============================================
+        async function editItem(id) {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem editar registros');
+                return;
+            }
+            
+            console.log('Editando item ID:', id);
+            
+            if (!fullData || fullData.length === 0) {
+                await fetchData();
+            }
+            
+            const item = fullData.find(i => String(i.id) === String(id));
+            
+            if (!item) {
+                console.error('Item não encontrado');
+                showNotification('Registro não encontrado', 'error');
+                return;
+            }
+
+            console.log('Item encontrado:', item);
+
+            document.getElementById('edit-id').value = item.id;
+            
+            document.querySelectorAll('input[name="tipo"]').forEach(radio => {
+                radio.checked = radio.value === item.tipo_equipamento;
+            });
+            
+            document.getElementById('f_modelo').value = item.modelo_aparelho || '';
+            document.getElementById('f_pba').value = item.versao_pba_board || '';
+            document.getElementById('f_defeito').value = item.defeito_sintoma || '';
+            document.getElementById('f_diagnostico').value = item.diagnostico_tecnico || '';
+            document.getElementById('f_solucao').value = item.solucao_final || '';
+            document.getElementById('f_componentes').value = item.componentes_envolvidos || '';
+            document.getElementById('f_dificuldade').value = item.nivel_dificuldade || '1';
+            
+            document.getElementById('modal-title').innerHTML = '<i class="bi bi-pencil-square text-blue-400 mr-3"></i>Editar Registro';
+            document.getElementById('itemModal').classList.remove('hidden');
+        }
+
+        // ============================================
+        // SUBMISSÃO DO FORMULÁRIO
+        // ============================================
+        document.getElementById('techForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                showNotification('Você precisa estar logado', 'error');
+                return;
+            }
+
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            
+            const payload = {
+                tipo_equipamento: tipo,
+                modelo_aparelho: document.getElementById('f_modelo').value,
+                versao_pba_board: document.getElementById('f_pba').value,
+                defeito_sintoma: document.getElementById('f_defeito').value,
+                diagnostico_tecnico: document.getElementById('f_diagnostico').value,
+                solucao_final: document.getElementById('f_solucao').value,
+                componentes_envolvidos: document.getElementById('f_componentes').value,
+                nivel_dificuldade: document.getElementById('f_dificuldade').value,
+                created_by: currentUser?.email,
+                updated_at: new Date()
+            };
+
+            const editId = document.getElementById('edit-id').value;
+
+            try {
+                let error;
+                
+                if (editId) {
+                    console.log('Atualizando item ID:', editId);
+                    const { error: updateError } = await _supabase
+                        .from('base_conhecimento')
+                        .update(payload)
+                        .eq('id', editId);
+                    error = updateError;
+                } else {
+                    console.log('Criando novo item');
+                    const { error: insertError } = await _supabase
+                        .from('base_conhecimento')
+                        .insert([payload]);
+                    error = insertError;
+                }
+
+                if (error) throw error;
+
+                hideModal();
+                fetchData();
+                showNotification(editId ? 'Registro atualizado com sucesso!' : 'Registro criado com sucesso!', 'success');
+                
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                showNotification('Erro: ' + error.message, 'error');
+            }
+        };
+
+        // ============================================
+        // FORMULÁRIO DE USUÁRIO
+        // ============================================
+        document.getElementById('userForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const userData = {
+                nome: document.getElementById('user_name').value,
+                email: document.getElementById('user_email').value,
+                role: document.getElementById('user_role').value
+            };
+
+            await createUser(userData);
+        };
+
+        async function deleteItem(id) {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem excluir registros');
+                return;
+            }
+
+            if (!confirm('Tem certeza? Esta ação não pode ser desfeita.')) return;
+
+            try {
+                const { error } = await _supabase
+                    .from('base_conhecimento')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                fetchData();
+                showNotification('Registro excluído!', 'success');
+                
+            } catch (error) {
+                showNotification('Erro ao excluir', 'error');
+            }
+        }
+
+        // ============================================
+        // GRÁFICOS
+        // ============================================
+        function initCharts(data) {
+            const monthlyData = processMonthlyData(data);
+            if (charts.monthly) charts.monthly.destroy();
+            
+            const monthlyOptions = {
+                series: [{
+                    name: 'Reparos',
+                    data: monthlyData.counts
+                }],
+                chart: {
+                    type: 'area',
+                    height: 250,
+                    toolbar: { show: false },
+                    background: 'transparent',
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 800
+                    }
+                },
+                theme: { mode: 'dark' },
+                xaxis: {
+                    categories: monthlyData.labels,
+                    labels: { style: { colors: '#9ca3af' } }
+                },
+                yaxis: { labels: { style: { colors: '#9ca3af' } } },
+                colors: ['#3b82f6'],
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.3
+                    }
+                },
+                dataLabels: { enabled: false },
+                stroke: { curve: 'smooth', width: 3 }
+            };
+
+            charts.monthly = new ApexCharts(document.querySelector("#monthly-chart"), monthlyOptions);
+            charts.monthly.render();
+
+            const pieData = processPieData(data);
+            if (charts.pie) charts.pie.destroy();
+
+            const pieOptions = {
+                series: pieData.values,
+                chart: {
+                    type: 'donut',
+                    height: 250,
+                    background: 'transparent',
+                    animations: { enabled: true }
+                },
+                labels: pieData.labels,
+                theme: { mode: 'dark' },
+                colors: ['#8b5cf6', '#3b82f6', '#10b981', '#6b7280'],
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '65%',
+                            labels: {
+                                show: true,
+                                total: { show: true, color: '#fff' }
+                            }
+                        }
+                    }
+                },
+                dataLabels: { enabled: false },
+                legend: { show: false }
+            };
+
+            charts.pie = new ApexCharts(document.querySelector("#pie-chart"), pieOptions);
+            charts.pie.render();
+
+            if (charts.sidebar) charts.sidebar.destroy();
+
+            const sidebarOptions = {
+                series: pieData.values,
+                chart: {
+                    type: 'donut',
+                    height: 120,
+                    background: 'transparent',
+                    sparkline: { enabled: true }
+                },
+                labels: pieData.labels,
+                theme: { mode: 'dark' },
+                colors: ['#8b5cf6', '#3b82f6', '#10b981', '#6b7280'],
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '60%',
+                            labels: { show: false }
+                        }
+                    }
+                },
+                dataLabels: { enabled: false },
+                tooltip: { enabled: false }
+            };
+
+            charts.sidebar = new ApexCharts(document.querySelector("#sidebar-chart"), sidebarOptions);
+            charts.sidebar.render();
+        }
+
+        function processMonthlyData(data) {
+            const months = {};
+            const now = new Date();
+            
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const key = `${d.getMonth()+1}/${d.getFullYear()}`;
+                months[key] = 0;
+            }
+
+            data.forEach(item => {
+                if (item.created_at) {
+                    const date = new Date(item.created_at);
+                    const key = `${date.getMonth()+1}/${date.getFullYear()}`;
+                    if (months.hasOwnProperty(key)) months[key]++;
+                }
+            });
+
+            return {
+                labels: Object.keys(months),
+                counts: Object.values(months)
+            };
+        }
+
+        function processPieData(data) {
+            const tipos = {
+                motherboard: data.filter(i => i.tipo_equipamento === 'motherboard').length,
+                notebook: data.filter(i => i.tipo_equipamento === 'notebook').length,
+                placa_video: data.filter(i => i.tipo_equipamento === 'placa_video').length,
+                outro: data.filter(i => i.tipo_equipamento === 'outro' || !i.tipo_equipamento).length
+            };
+
+            return {
+                labels: ['Motherboards', 'Notebooks', 'Placas de Vídeo', 'Outros'],
+                values: [tipos.motherboard, tipos.notebook, tipos.placa_video, tipos.outro]
+            };
+        }
+
+        // ============================================
+        // ANALYTICS AVANÇADO
+        // ============================================
+        function updateAnalyticsCharts() {
+            if (!fullData || fullData.length === 0) return;
+
+            const total = fullData.length;
+            
+            const motherboards = fullData.filter(i => i.tipo_equipamento === 'motherboard').length;
+            const notebooks = fullData.filter(i => i.tipo_equipamento === 'notebook').length;
+            const gpus = fullData.filter(i => i.tipo_equipamento === 'placa_video').length;
+            const outros = fullData.filter(i => i.tipo_equipamento === 'outro' || !i.tipo_equipamento).length;
+
+            document.getElementById('analytics-mb').textContent = motherboards;
+            document.getElementById('analytics-nb').textContent = notebooks;
+            document.getElementById('analytics-gpu').textContent = gpus;
+            document.getElementById('analytics-outro').textContent = outros;
+
+            document.getElementById('analytics-mb-percent').textContent = Math.round(motherboards/total*100) + '%';
+            document.getElementById('analytics-nb-percent').textContent = Math.round(notebooks/total*100) + '%';
+            document.getElementById('analytics-gpu-percent').textContent = Math.round(gpus/total*100) + '%';
+            document.getElementById('analytics-outro-percent').textContent = Math.round(outros/total*100) + '%';
+
+            const dificuldade = {
+                1: fullData.filter(i => i.nivel_dificuldade == 1).length,
+                2: fullData.filter(i => i.nivel_dificuldade == 2).length,
+                3: fullData.filter(i => i.nivel_dificuldade == 3).length,
+                4: fullData.filter(i => i.nivel_dificuldade == 4).length
+            };
+
+            if (charts.difficulty) charts.difficulty.destroy();
+            
+            const difficultyOptions = {
+                series: [{
+                    name: 'Reparos',
+                    data: [dificuldade[1], dificuldade[2], dificuldade[3], dificuldade[4]]
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 250,
+                    toolbar: { show: false },
+                    background: 'transparent'
+                },
+                theme: { mode: 'dark' },
+                xaxis: {
+                    categories: ['Básico', 'Intermediário', 'Avançado', 'Expert'],
+                    labels: { style: { colors: '#9ca3af' } }
+                },
+                colors: ['#f59e0b', '#3b82f6', '#8b5cf6', '#ef4444']
+            };
+
+            charts.difficulty = new ApexCharts(document.querySelector("#difficulty-chart"), difficultyOptions);
+            charts.difficulty.render();
+
+            const componentes = {};
+            fullData.forEach(item => {
+                if (item.componentes_envolvidos) {
+                    item.componentes_envolvidos.split(',').forEach(comp => {
+                        const c = comp.trim();
+                        if (c) componentes[c] = (componentes[c] || 0) + 1;
+                    });
+                }
+            });
+
+            const topCompAnalytics = Object.entries(componentes)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10)
+                .map(([comp, count]) => `
+                    <div class="flex items-center justify-between p-2 bg-gray-800 rounded-lg">
+                        <span class="text-sm font-mono">${comp}</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div class="bg-purple-600 h-2 rounded-full" style="width: ${(count/total)*100}%"></div>
+                            </div>
+                            <span class="text-xs text-purple-400">${count}x</span>
+                        </div>
+                    </div>
+                `).join('');
+
+            document.getElementById('top-components-analytics').innerHTML = topCompAnalytics;
+        }
+
+        // ============================================
+        // SIDEBAR ESTATÍSTICAS
+        // ============================================
+        function updateSidebarStats(data) {
+            if (!data || data.length === 0) return;
+
+            const total = data.length;
+            
+            const motherboards = data.filter(i => i.tipo_equipamento === 'motherboard').length;
+            const notebooks = data.filter(i => i.tipo_equipamento === 'notebook').length;
+            const gpus = data.filter(i => i.tipo_equipamento === 'placa_video').length;
+            const outros = data.filter(i => i.tipo_equipamento === 'outro' || !i.tipo_equipamento).length;
+
+            document.getElementById('total-repairs-sidebar').textContent = total;
+            document.getElementById('stat-motherboard').textContent = motherboards;
+            document.getElementById('stat-notebook').textContent = notebooks;
+            document.getElementById('stat-gpu').textContent = gpus;
+            document.getElementById('stat-outro').textContent = outros;
+
+            document.getElementById('stat-motherboard-percent').textContent = `(${Math.round(motherboards/total*100)}%)`;
+            document.getElementById('stat-notebook-percent').textContent = `(${Math.round(notebooks/total*100)}%)`;
+            document.getElementById('stat-gpu-percent').textContent = `(${Math.round(gpus/total*100)}%)`;
+            document.getElementById('stat-outro-percent').textContent = `(${Math.round(outros/total*100)}%)`;
+
+            const camposCompletos = data.filter(item => 
+                item.modelo_aparelho && 
+                item.versao_pba_board && 
+                item.defeito_sintoma && 
+                item.solucao_final &&
+                item.diagnostico_tecnico &&
+                item.componentes_envolvidos
+            ).length;
+            
+            const completude = Math.round((camposCompletos / total) * 100);
+            document.getElementById('completude-base').textContent = completude + '%';
+            document.getElementById('progress-bar').style.width = completude + '%';
+
+            const defects = {};
+            data.forEach(item => {
+                const defect = item.defeito_sintoma?.split(' ').slice(0, 3).join(' ') || 'Sem defeito';
+                defects[defect] = (defects[defect] || 0) + 1;
+            });
+
+            const topDefects = Object.entries(defects)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            document.getElementById('top-defects').innerHTML = topDefects.map(([defect, count], index) => `
+                <div class="flex items-center justify-between p-2 hover:bg-gray-700/30 rounded-lg transition-all">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-bold ${index === 0 ? 'text-yellow-500' : 'text-gray-400'}">${index + 1}º</span>
+                        <span class="text-sm truncate max-w-[150px]">${defect}</span>
+                    </div>
+                    <span class="bg-blue-600 text-xs px-2 py-0.5 rounded-full">${count}x</span>
+                </div>
+            `).join('');
+
+            const componentes = {};
+            data.forEach(item => {
+                if (item.componentes_envolvidos) {
+                    item.componentes_envolvidos.split(',').forEach(comp => {
+                        const c = comp.trim();
+                        if (c) componentes[c] = (componentes[c] || 0) + 1;
+                    });
+                }
+            });
+
+            const topComponents = Object.entries(componentes)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            document.getElementById('top-components').innerHTML = topComponents.map(([comp, count]) => `
+                <div class="flex items-center justify-between p-2 hover:bg-gray-700/30 rounded-lg">
+                    <span class="text-sm font-mono">${comp}</span>
+                    <span class="bg-purple-600 text-xs px-2 py-0.5 rounded-full">${count}x</span>
+                </div>
+            `).join('');
+
+            document.getElementById('total-repairs').textContent = total;
+            
+            const thisMonth = data.filter(item => {
+                const date = new Date(item.created_at);
+                const now = new Date();
+                return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+            }).length;
+            document.getElementById('month-repairs').textContent = thisMonth;
+
+            const lastMonth = data.filter(item => {
+                const date = new Date(item.created_at);
+                const now = new Date();
+                const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                return date.getMonth() === last.getMonth() && date.getFullYear() === last.getFullYear();
+            }).length;
+
+            const growth = lastMonth ? ((thisMonth - lastMonth) / lastMonth * 100).toFixed(1) : 0;
+            document.getElementById('growth-rate').textContent = growth + '%';
+            document.getElementById('avg-daily').textContent = (thisMonth / new Date().getDate()).toFixed(1);
+
+            const uniqueComponents = new Set();
+            data.forEach(item => {
+                if (item.componentes_envolvidos) {
+                    item.componentes_envolvidos.split(',').forEach(c => uniqueComponents.add(c.trim()));
+                }
+            });
+            document.getElementById('unique-components').textContent = uniqueComponents.size;
+
+            initCharts(data);
+        }
+
+        // ============================================
+        // BUSCA INTELIGENTE EM TEMPO REAL
+        // ============================================
+        function smartSearch() {
+            const q = document.getElementById('mainSearch').value.toLowerCase().trim();
+            const filter = document.getElementById('searchFilter').value;
+            
+            if (q === '') {
+                renderItems(fullData);
+                document.getElementById('search-result-count').innerHTML = `Total: <span class="text-blue-400">${fullData.length}</span> registros`;
+                return;
+            }
+
+            const filtered = fullData.filter(item => {
+                if (filter === 'all') {
+                    return (
+                        item.modelo_aparelho?.toLowerCase().includes(q) ||
+                        item.versao_pba_board?.toLowerCase().includes(q) ||
+                        item.defeito_sintoma?.toLowerCase().includes(q) ||
+                        item.solucao_final?.toLowerCase().includes(q) ||
+                        item.diagnostico_tecnico?.toLowerCase().includes(q) ||
+                        item.componentes_envolvidos?.toLowerCase().includes(q)
+                    );
+                }
+                
+                const fieldMap = {
+                    'modelo': 'modelo_aparelho',
+                    'pba': 'versao_pba_board',
+                    'defeito': 'defeito_sintoma',
+                    'solucao': 'solucao_final',
+                    'componente': 'componentes_envolvidos'
+                };
+                
+                const field = fieldMap[filter];
+                return item[field]?.toString().toLowerCase().includes(q);
+            });
+            
+            renderItems(filtered);
+            document.getElementById('search-result-count').innerHTML = 
+                `Resultados: <span class="text-blue-400">${filtered.length}</span> de <span class="text-gray-400">${fullData.length}</span> registros`;
+        }
+
+        // ============================================
+        // GERENCIAMENTO DE MODELOS
+        // ============================================
+        function loadModels() {
+            const modelos = [...new Set(fullData.map(item => item.modelo_aparelho))];
+            const list = document.getElementById('models-list');
+            
+            list.innerHTML = modelos.map(modelo => `
+                <div class="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                    <span>${modelo}</span>
+                    <div class="flex gap-2">
+                        <button onclick="editModel('${modelo}')" class="text-blue-400 hover:text-blue-300 p-2 hover:bg-gray-600 rounded-lg">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button onclick="deleteModel('${modelo}')" class="text-red-400 hover:text-red-300 p-2 hover:bg-gray-600 rounded-lg">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addModel() {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem adicionar modelos');
+                return;
+            }
+            
+            const name = document.getElementById('newModelName').value;
+            if (!name) return;
+            
+            showNotification('Modelo adicionado à lista de sugestões', 'success');
+            document.getElementById('newModelName').value = '';
+            loadModels();
+        }
+
+        function editModel(modelo) {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem editar modelos');
+                return;
+            }
+            
+            const novoNome = prompt('Editar modelo:', modelo);
+            if (novoNome && novoNome !== modelo) {
+                showNotification(`Modelo ${modelo} alterado para ${novoNome}`, 'success');
+                loadModels();
+            }
+        }
+
+        function deleteModel(modelo) {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem excluir modelos');
+                return;
+            }
+            
+            if (!confirm(`Excluir todas as ocorrências do modelo ${modelo}?`)) return;
+            showNotification('Função em desenvolvimento', 'info');
+        }
+
+        // ============================================
+        // UTILITÁRIOS
+        // ============================================
+        function showNotification(msg, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-2xl z-[100] animate-slide-in ${
+                type === 'success' ? 'bg-green-600' : 
+                type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+            }`;
+            toast.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i class="bi ${type === 'success' ? 'bi-check-circle' : type === 'error' ? 'bi-exclamation-circle' : 'bi-info-circle'}"></i>
+                    <span>${msg}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        }
+
+        function exportFullBackup() {
+            const dataStr = JSON.stringify(fullData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `techfix-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            showNotification('Backup exportado com sucesso!', 'success');
+        }
+
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        window.onload = () => {
+            fetchData();
+            checkSession();
+            updateUserInterface();
+            carregarDefeitosSelect();
+            atualizarListaDefeitos();
+            
+            setInterval(() => {
+                document.getElementById('online-count').textContent = Math.floor(Math.random() * 5 + 1) + ' online';
+            }, 10000);
+        };
+    </script>
+</body>
+</html>
