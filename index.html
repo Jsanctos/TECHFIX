@@ -663,7 +663,7 @@
         let users = [];
         let charts = {};
         let onlineUsers = [];
-        let tempUserEmail = null; // Para armazenar email durante troca de senha
+        let tempUserEmail = null;
 
         // ============================================
         // FUNÇÕES DE VISIBILIDADE DE SENHA
@@ -691,23 +691,27 @@
             }
 
             try {
-                // 1. Criar no Authentication com senha padrão 123456
                 const { data: authData, error: authError } = await _supabase.auth.signUp({
                     email: userData.email,
-                    password: '123456' // Senha padrão com 6 caracteres
+                    password: '123456',
+                    options: {
+                        data: {
+                            nome: userData.nome,
+                            role: userData.role
+                        }
+                    }
                 });
 
                 if (authError) throw authError;
 
-                // 2. Inserir na tabela usuarios
                 const { error: dbError } = await _supabase
                     .from('usuarios')
                     .insert([{
                         nome: userData.nome,
                         email: userData.email,
-                        senha: '123456', // Senha padrão
+                        senha: '123456',
                         role: userData.role,
-                        primeiro_acesso: true // Flag para forçar troca de senha
+                        primeiro_acesso: true
                     }]);
 
                 if (dbError) throw dbError;
@@ -723,7 +727,7 @@
         }
 
         // ============================================
-        // AUTENTICAÇÃO COM VERIFICAÇÃO DE PRIMEIRO ACESSO
+        // AUTENTICAÇÃO
         // ============================================
         async function login(email, password) {
             try {
@@ -734,7 +738,6 @@
 
                 if (error) throw error;
 
-                // Buscar dados do usuário na tabela
                 const { data: userData, error: userError } = await _supabase
                     .from('usuarios')
                     .select('*')
@@ -750,12 +753,10 @@
                     role: userData.role
                 };
 
-                // Verificar se é primeiro acesso (senha = 123456)
                 if (password === '123456' || userData.primeiro_acesso === true) {
                     tempUserEmail = email;
                     showPasswordModal();
                     
-                    // Marcar que precisa trocar senha
                     await _supabase
                         .from('usuarios')
                         .update({ primeiro_acesso: true })
@@ -764,7 +765,6 @@
                     return true;
                 }
 
-                // Atualizar último acesso
                 await _supabase
                     .from('usuarios')
                     .update({ ultimo_acesso: new Date() })
@@ -786,83 +786,7 @@
             }
         }
 
-        // ============================================
-        // MODAL DE TROCA DE SENHA
-        // ============================================
-        function showPasswordModal() {
-            document.getElementById('passwordModal').classList.remove('hidden');
-        }
-
-        function hidePasswordModal() {
-            document.getElementById('passwordModal').classList.add('hidden');
-        }
-
-        // ============================================
-        // TROCAR SENHA
-        // ============================================
-        document.getElementById('passwordForm').onsubmit = async (e) => {
-            e.preventDefault();
-            
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-
-            if (newPassword !== confirmPassword) {
-                showNotification('As senhas não coincidem!', 'error');
-                return;
-            }
-
-            if (newPassword.length < 6) {
-                showNotification('A senha deve ter no mínimo 6 caracteres', 'error');
-                return;
-            }
-
-            try {
-                // Atualizar senha no Authentication
-                const { error } = await _supabase.auth.updateUser({
-                    password: newPassword
-                });
-
-                if (error) throw error;
-
-                // Atualizar flag primeiro_acesso na tabela
-                await _supabase
-                    .from('usuarios')
-                    .update({ 
-                        senha: newPassword,
-                        primeiro_acesso: false,
-                        ultimo_acesso: new Date()
-                    })
-                    .eq('email', tempUserEmail);
-
-                // Recarregar dados do usuário
-                const { data: userData } = await _supabase
-                    .from('usuarios')
-                    .select('*')
-                    .eq('email', tempUserEmail)
-                    .single();
-
-                currentUser = {
-                    email: tempUserEmail,
-                    nome: userData.nome,
-                    role: userData.role
-                };
-
-                hidePasswordModal();
-                updateUserInterface();
-
-                if (currentUser.role === 'admin') {
-                    document.getElementById('admin-section').classList.remove('hidden');
-                    loadUsers();
-                }
-
-                showNotification('Senha alterada com sucesso!', 'success');
-
-            } catch (error) {
-                showNotification('Erro ao alterar senha: ' + error.message, 'error');
-            }
-        };
-
-        // Modal de login melhorado
+        // Modal de login
         function showLoginModal() {
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black bg-opacity-90 backdrop-blur-sm';
@@ -898,7 +822,7 @@
                         </button>
 
                         <p class="text-xs text-center text-gray-400 mt-4">
-                            Novos usuários: senha padrão <span class="text-blue-400 font-bold">123456</span> (será solicitada troca no primeiro login)
+                            Novos usuários: senha padrão <span class="text-blue-400 font-bold">123456</span>
                         </p>
                     </form>
                 </div>
@@ -918,7 +842,7 @@
             };
         }
 
-        // Logout real
+        // Logout
         async function logout() {
             await _supabase.auth.signOut();
             currentUser = null;
@@ -927,7 +851,7 @@
             showNotification('Logout realizado com sucesso', 'info');
         }
 
-        // Verificar sessão ao carregar
+        // Verificar sessão
         async function checkSession() {
             const { data: { session } } = await _supabase.auth.getSession();
             
@@ -954,6 +878,75 @@
                 }
             }
         }
+
+        // Modal de troca de senha
+        function showPasswordModal() {
+            document.getElementById('passwordModal').classList.remove('hidden');
+        }
+
+        function hidePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+        }
+
+        // Trocar senha
+        document.getElementById('passwordForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showNotification('As senhas não coincidem!', 'error');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showNotification('A senha deve ter no mínimo 6 caracteres', 'error');
+                return;
+            }
+
+            try {
+                const { error } = await _supabase.auth.updateUser({
+                    password: newPassword
+                });
+
+                if (error) throw error;
+
+                await _supabase
+                    .from('usuarios')
+                    .update({ 
+                        senha: newPassword,
+                        primeiro_acesso: false,
+                        ultimo_acesso: new Date()
+                    })
+                    .eq('email', tempUserEmail);
+
+                const { data: userData } = await _supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('email', tempUserEmail)
+                    .single();
+
+                currentUser = {
+                    email: tempUserEmail,
+                    nome: userData.nome,
+                    role: userData.role
+                };
+
+                hidePasswordModal();
+                updateUserInterface();
+
+                if (currentUser.role === 'admin') {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    loadUsers();
+                }
+
+                showNotification('Senha alterada com sucesso!', 'success');
+
+            } catch (error) {
+                showNotification('Erro ao alterar senha: ' + error.message, 'error');
+            }
+        };
 
         // ============================================
         // SISTEMA DE USUÁRIOS
@@ -1155,7 +1148,8 @@
                 return;
             }
 
-            grid.innerHTML = items.map(item => `
+            grid.innerHTML = items.map(item => {
+                return `
                 <div class="tech-card glass-card rounded-2xl p-6 hover-glow" data-id="${item.id}">
                     <!-- Header do Card -->
                     <div class="flex justify-between items-start mb-4">
@@ -1234,7 +1228,7 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         // Funções auxiliares
@@ -1274,10 +1268,160 @@
         }
 
         // ============================================
+        // FUNÇÃO DE EDITAR ITEM CORRIGIDA
+        // ============================================
+        async function editItem(id) {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem editar registros');
+                return;
+            }
+            
+            console.log('Editando item ID:', id);
+            
+            // Garantir que fullData está carregado
+            if (!fullData || fullData.length === 0) {
+                await fetchData();
+            }
+            
+            // Converter para string para comparação segura
+            const item = fullData.find(i => String(i.id) === String(id));
+            
+            if (!item) {
+                console.error('Item não encontrado. fullData:', fullData);
+                console.error('ID buscado:', id);
+                showNotification('Registro não encontrado', 'error');
+                return;
+            }
+
+            console.log('Item encontrado:', item);
+
+            // Preencher o ID de edição
+            document.getElementById('edit-id').value = item.id;
+            
+            // Selecionar o tipo correto
+            document.querySelectorAll('input[name="tipo"]').forEach(radio => {
+                radio.checked = radio.value === item.tipo_equipamento;
+            });
+            
+            // Preencher todos os campos do formulário
+            document.getElementById('f_modelo').value = item.modelo_aparelho || '';
+            document.getElementById('f_pba').value = item.versao_pba_board || '';
+            document.getElementById('f_defeito').value = item.defeito_sintoma || '';
+            document.getElementById('f_diagnostico').value = item.diagnostico_tecnico || '';
+            document.getElementById('f_solucao').value = item.solucao_final || '';
+            document.getElementById('f_componentes').value = item.componentes_envolvidos || '';
+            document.getElementById('f_dificuldade').value = item.nivel_dificuldade || '1';
+            
+            // Mudar o título do modal para "Editar Registro"
+            document.getElementById('modal-title').innerHTML = '<i class="bi bi-pencil-square text-blue-400 mr-3"></i>Editar Registro';
+            
+            // Mostrar o modal
+            document.getElementById('itemModal').classList.remove('hidden');
+            
+            console.log('Modal aberto para edição');
+        }
+
+        // ============================================
+        // SUBMISSÃO DO FORMULÁRIO
+        // ============================================
+        document.getElementById('techForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                showNotification('Você precisa estar logado', 'error');
+                return;
+            }
+
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            
+            const payload = {
+                tipo_equipamento: tipo,
+                modelo_aparelho: document.getElementById('f_modelo').value,
+                versao_pba_board: document.getElementById('f_pba').value,
+                defeito_sintoma: document.getElementById('f_defeito').value,
+                diagnostico_tecnico: document.getElementById('f_diagnostico').value,
+                solucao_final: document.getElementById('f_solucao').value,
+                componentes_envolvidos: document.getElementById('f_componentes').value,
+                nivel_dificuldade: document.getElementById('f_dificuldade').value,
+                created_by: currentUser?.email,
+                updated_at: new Date()
+            };
+
+            const editId = document.getElementById('edit-id').value;
+
+            try {
+                let error;
+                
+                if (editId) {
+                    console.log('Atualizando item ID:', editId);
+                    const { error: updateError } = await _supabase
+                        .from('base_conhecimento')
+                        .update(payload)
+                        .eq('id', editId);
+                    error = updateError;
+                } else {
+                    console.log('Criando novo item');
+                    const { error: insertError } = await _supabase
+                        .from('base_conhecimento')
+                        .insert([payload]);
+                    error = insertError;
+                }
+
+                if (error) throw error;
+
+                hideModal();
+                fetchData();
+                showNotification(editId ? 'Registro atualizado com sucesso!' : 'Registro criado com sucesso!', 'success');
+                
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                showNotification('Erro: ' + error.message, 'error');
+            }
+        };
+
+        // ============================================
+        // FORMULÁRIO DE USUÁRIO
+        // ============================================
+        document.getElementById('userForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const userData = {
+                nome: document.getElementById('user_name').value,
+                email: document.getElementById('user_email').value,
+                role: document.getElementById('user_role').value
+            };
+
+            await createUser(userData);
+        };
+
+        async function deleteItem(id) {
+            if (currentUser?.role !== 'admin') {
+                alert('Apenas administradores podem excluir registros');
+                return;
+            }
+
+            if (!confirm('Tem certeza? Esta ação não pode ser desfeita.')) return;
+
+            try {
+                const { error } = await _supabase
+                    .from('base_conhecimento')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                fetchData();
+                showNotification('Registro excluído!', 'success');
+                
+            } catch (error) {
+                showNotification('Erro ao excluir', 'error');
+            }
+        }
+
+        // ============================================
         // GRÁFICOS
         // ============================================
         function initCharts(data) {
-            // Gráfico mensal
             const monthlyData = processMonthlyData(data);
             if (charts.monthly) charts.monthly.destroy();
             
@@ -1319,7 +1463,6 @@
             charts.monthly = new ApexCharts(document.querySelector("#monthly-chart"), monthlyOptions);
             charts.monthly.render();
 
-            // Gráfico pizza
             const pieData = processPieData(data);
             if (charts.pie) charts.pie.destroy();
 
@@ -1352,7 +1495,6 @@
             charts.pie = new ApexCharts(document.querySelector("#pie-chart"), pieOptions);
             charts.pie.render();
 
-            // Gráfico sidebar
             if (charts.sidebar) charts.sidebar.destroy();
 
             const sidebarOptions = {
@@ -1428,7 +1570,6 @@
 
             const total = fullData.length;
             
-            // Atualizar cards de categoria
             const motherboards = fullData.filter(i => i.tipo_equipamento === 'motherboard').length;
             const notebooks = fullData.filter(i => i.tipo_equipamento === 'notebook').length;
             const gpus = fullData.filter(i => i.tipo_equipamento === 'placa_video').length;
@@ -1444,7 +1585,6 @@
             document.getElementById('analytics-gpu-percent').textContent = Math.round(gpus/total*100) + '%';
             document.getElementById('analytics-outro-percent').textContent = Math.round(outros/total*100) + '%';
 
-            // Gráfico de dificuldade
             const dificuldade = {
                 1: fullData.filter(i => i.nivel_dificuldade == 1).length,
                 2: fullData.filter(i => i.nivel_dificuldade == 2).length,
@@ -1476,7 +1616,6 @@
             charts.difficulty = new ApexCharts(document.querySelector("#difficulty-chart"), difficultyOptions);
             charts.difficulty.render();
 
-            // Top componentes analytics
             const componentes = {};
             fullData.forEach(item => {
                 if (item.componentes_envolvidos) {
@@ -1513,26 +1652,22 @@
 
             const total = data.length;
             
-            // Contagens por categoria
             const motherboards = data.filter(i => i.tipo_equipamento === 'motherboard').length;
             const notebooks = data.filter(i => i.tipo_equipamento === 'notebook').length;
             const gpus = data.filter(i => i.tipo_equipamento === 'placa_video').length;
             const outros = data.filter(i => i.tipo_equipamento === 'outro' || !i.tipo_equipamento).length;
 
-            // Atualizar contadores
             document.getElementById('total-repairs-sidebar').textContent = total;
             document.getElementById('stat-motherboard').textContent = motherboards;
             document.getElementById('stat-notebook').textContent = notebooks;
             document.getElementById('stat-gpu').textContent = gpus;
             document.getElementById('stat-outro').textContent = outros;
 
-            // Percentuais
             document.getElementById('stat-motherboard-percent').textContent = `(${Math.round(motherboards/total*100)}%)`;
             document.getElementById('stat-notebook-percent').textContent = `(${Math.round(notebooks/total*100)}%)`;
             document.getElementById('stat-gpu-percent').textContent = `(${Math.round(gpus/total*100)}%)`;
             document.getElementById('stat-outro-percent').textContent = `(${Math.round(outros/total*100)}%)`;
 
-            // Barra de progresso
             const camposCompletos = data.filter(item => 
                 item.modelo_aparelho && 
                 item.versao_pba_board && 
@@ -1546,7 +1681,6 @@
             document.getElementById('completude-base').textContent = completude + '%';
             document.getElementById('progress-bar').style.width = completude + '%';
 
-            // Top defeitos
             const defects = {};
             data.forEach(item => {
                 const defect = item.defeito_sintoma?.split(' ').slice(0, 3).join(' ') || 'Sem defeito';
@@ -1567,7 +1701,6 @@
                 </div>
             `).join('');
 
-            // Top componentes
             const componentes = {};
             data.forEach(item => {
                 if (item.componentes_envolvidos) {
@@ -1589,7 +1722,6 @@
                 </div>
             `).join('');
 
-            // Atualizar cards do dashboard
             document.getElementById('total-repairs').textContent = total;
             
             const thisMonth = data.filter(item => {
@@ -1618,7 +1750,6 @@
             });
             document.getElementById('unique-components').textContent = uniqueComponents.size;
 
-            // Inicializar gráficos
             initCharts(data);
         }
 
@@ -1662,128 +1793,6 @@
             renderItems(filtered);
             document.getElementById('search-result-count').innerHTML = 
                 `Resultados: <span class="text-blue-400">${filtered.length}</span> de <span class="text-gray-400">${fullData.length}</span> registros`;
-        }
-
-        // ============================================
-        // SUBMISSÃO DO FORMULÁRIO
-        // ============================================
-        document.getElementById('techForm').onsubmit = async (e) => {
-            e.preventDefault();
-            
-            if (!currentUser) {
-                showNotification('Você precisa estar logado', 'error');
-                return;
-            }
-
-            const tipo = document.querySelector('input[name="tipo"]:checked').value;
-            
-            const payload = {
-                tipo_equipamento: tipo,
-                modelo_aparelho: document.getElementById('f_modelo').value,
-                versao_pba_board: document.getElementById('f_pba').value,
-                defeito_sintoma: document.getElementById('f_defeito').value,
-                diagnostico_tecnico: document.getElementById('f_diagnostico').value,
-                solucao_final: document.getElementById('f_solucao').value,
-                componentes_envolvidos: document.getElementById('f_componentes').value,
-                nivel_dificuldade: document.getElementById('f_dificuldade').value,
-                created_by: currentUser?.email,
-                updated_at: new Date()
-            };
-
-            const editId = document.getElementById('edit-id').value;
-
-            try {
-                let error;
-                
-                if (editId) {
-                    const { error: updateError } = await _supabase
-                        .from('base_conhecimento')
-                        .update(payload)
-                        .eq('id', editId);
-                    error = updateError;
-                } else {
-                    const { error: insertError } = await _supabase
-                        .from('base_conhecimento')
-                        .insert([payload]);
-                    error = insertError;
-                }
-
-                if (error) throw error;
-
-                hideModal();
-                fetchData();
-                showNotification(editId ? 'Registro atualizado!' : 'Registro criado!', 'success');
-                
-            } catch (error) {
-                showNotification('Erro: ' + error.message, 'error');
-            }
-        };
-
-        // ============================================
-        // FORMULÁRIO DE USUÁRIO
-        // ============================================
-        document.getElementById('userForm').onsubmit = async (e) => {
-            e.preventDefault();
-            
-            const userData = {
-                nome: document.getElementById('user_name').value,
-                email: document.getElementById('user_email').value,
-                role: document.getElementById('user_role').value
-            };
-
-            await createUser(userData);
-        };
-
-        async function editItem(id) {
-            if (currentUser?.role !== 'admin') {
-                alert('Apenas administradores podem editar registros');
-                return;
-            }
-            
-            const item = fullData.find(i => i.id === id);
-            if (!item) return;
-
-            document.getElementById('edit-id').value = id;
-            
-            // Selecionar o tipo correto
-            document.querySelectorAll('input[name="tipo"]').forEach(radio => {
-                radio.checked = radio.value === item.tipo_equipamento;
-            });
-            
-            document.getElementById('f_modelo').value = item.modelo_aparelho || '';
-            document.getElementById('f_pba').value = item.versao_pba_board || '';
-            document.getElementById('f_defeito').value = item.defeito_sintoma || '';
-            document.getElementById('f_diagnostico').value = item.diagnostico_tecnico || '';
-            document.getElementById('f_solucao').value = item.solucao_final || '';
-            document.getElementById('f_componentes').value = item.componentes_envolvidos || '';
-            document.getElementById('f_dificuldade').value = item.nivel_dificuldade || '1';
-            
-            document.getElementById('modal-title').innerHTML = '<i class="bi bi-pencil-square text-blue-400 mr-3"></i>Editar Registro';
-            document.getElementById('itemModal').classList.remove('hidden');
-        }
-
-        async function deleteItem(id) {
-            if (currentUser?.role !== 'admin') {
-                alert('Apenas administradores podem excluir registros');
-                return;
-            }
-
-            if (!confirm('Tem certeza? Esta ação não pode ser desfeita.')) return;
-
-            try {
-                const { error } = await _supabase
-                    .from('base_conhecimento')
-                    .delete()
-                    .eq('id', id);
-
-                if (error) throw error;
-
-                fetchData();
-                showNotification('Registro excluído!', 'success');
-                
-            } catch (error) {
-                showNotification('Erro ao excluir', 'error');
-            }
         }
 
         // ============================================
@@ -1887,7 +1896,6 @@
             checkSession();
             updateUserInterface();
             
-            // Simular usuários online
             setInterval(() => {
                 document.getElementById('online-count').textContent = Math.floor(Math.random() * 5 + 1) + ' online';
             }, 10000);
